@@ -10,6 +10,7 @@ import '../services/nav.dart';
 import '../widgets/common.dart';
 import '../widgets/ui.dart';
 import 'doc_detail.dart';
+import 'doc_quick_view.dart';
 
 const _bulanPanjang = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
@@ -900,7 +901,7 @@ class _ActivityItem extends StatelessWidget {
     final tileFg = local ? YmColors.onWarningSoft : (cat.code == 'SHIPMENT' ? YmColors.success : YmColors.primary);
     return InkWell(
       borderRadius: BorderRadius.circular(8),
-      onTap: () => showDocDetail(context, d),
+      onTap: () => showDocQuickView(context, d),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
           width: 32,

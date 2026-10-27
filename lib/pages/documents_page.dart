@@ -18,6 +18,7 @@ import '../widgets/common.dart';
 import '../widgets/ui.dart';
 import 'doc_detail.dart';
 import 'doc_form.dart';
+import 'doc_quick_view.dart';
 
 // ============================================================================
 //  SEMUA DOKUMEN / DOKUMEN SAYA / TERSIMPAN DI PC INI
@@ -1221,7 +1222,7 @@ class _DocCard extends StatelessWidget {
             : CategoryTile(code: d.category, size: compact ? 36 : 44);
 
     final card = HoverCard(
-      onTap: open,
+      onTap: highlight.isEmpty ? () => showDocQuickView(context, d) : open,
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 10 : 16),
       gradient: failed
           ? LinearGradient(colors: [YmColors.warningSoft.withOpacity(0.2), YmColors.surface, YmColors.surface], stops: const [0, 0.5, 1])
@@ -1408,7 +1409,7 @@ class _DocTile extends StatelessWidget {
     final d = doc;
     final (syncIcon, syncText, syncColor, _) = _syncInfo(d);
     return HoverCard(
-      onTap: () => showDocDetail(context, d),
+      onTap: () => showDocQuickView(context, d),
       borderColor: selected ? YmColors.primary.withOpacity(0.5) : null,
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1697,7 +1698,7 @@ class _RelChip extends StatelessWidget {
       message: '${r.doc.title}\n${r.reasons.join(' • ')}',
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        onTap: () => showDocDetail(context, r.doc),
+        onTap: () => showDocQuickView(context, r.doc),
         child: Container(
           padding: const EdgeInsets.fromLTRB(4, 3, 8, 3),
           decoration: BoxDecoration(
@@ -1917,7 +1918,7 @@ class _DossierCard extends StatelessWidget {
               message: d.title,
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () => showDocDetail(context, d),
+                onTap: () => showDocQuickView(context, d),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -2044,7 +2045,7 @@ class _DocTable extends StatelessWidget {
         ),
         for (final d in docs.take(100))
           InkWell(
-            onTap: () => showDocDetail(context, d),
+            onTap: () => showDocQuickView(context, d),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(border: Border(top: BorderSide(color: YmColors.surfaceAlt))),
@@ -2118,7 +2119,7 @@ class _AlertsCard extends StatelessWidget {
               baseShadowOverride: const [],
               hoverShadowOverride: const [],
               hoverColor: YmColors.surfaceContainer,
-              onTap: () => showDocDetail(context, d),
+              onTap: () => showDocQuickView(context, d),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
                   Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),

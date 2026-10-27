@@ -23,9 +23,9 @@ import '../viewer/viewer_common.dart';
 /// tampilan DATA DOKUMEN terstruktur + FILE ASLI, berpindah dengan animasi.
 /// [highlight] = kata/kode yang langsung disorot di isi file (dari hasil pencarian).
 /// [startOnFile] = langsung tampilkan file asli.
-Future<void> showDocDetail(BuildContext context, DocRecord doc, {String highlight = '', bool startOnFile = false}) {
+Future<void> showDocDetail(BuildContext context, DocRecord doc, {String highlight = '', bool startOnFile = false, int initialTab = 0}) {
   return Navigator.of(context).push(MaterialPageRoute(
-    builder: (_) => _DocDetailPage(doc: doc, highlight: highlight, startOnFile: startOnFile),
+    builder: (_) => _DocDetailPage(doc: doc, highlight: highlight, startOnFile: startOnFile, initialTab: initialTab),
   ));
 }
 
@@ -44,7 +44,8 @@ class _DocDetailPage extends StatefulWidget {
   final DocRecord doc;
   final String highlight;
   final bool startOnFile;
-  const _DocDetailPage({required this.doc, this.highlight = '', this.startOnFile = false});
+  final int initialTab;
+  const _DocDetailPage({required this.doc, this.highlight = '', this.startOnFile = false, this.initialTab = 0});
 
   @override
   State<_DocDetailPage> createState() => _DocDetailPageState();
@@ -375,6 +376,7 @@ class _DocDetailPageState extends State<_DocDetailPage> {
             padding: EdgeInsets.zero,
             child: DefaultTabController(
               length: 4,
+              initialIndex: widget.initialTab.clamp(0, 3).toInt(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
