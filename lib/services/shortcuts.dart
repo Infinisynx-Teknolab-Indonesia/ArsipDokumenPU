@@ -75,7 +75,7 @@ class KeyCombo {
   /// Kombinasi dari tombol yang sedang ditekan (dipakai saat merekam pintasan baru).
   static KeyCombo? fromEvent(KeyEvent e) {
     final k = e.logicalKey;
-    const mods = {
+    final mods = <LogicalKeyboardKey>{
       LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.controlRight, LogicalKeyboardKey.shiftLeft, LogicalKeyboardKey.shiftRight,
       LogicalKeyboardKey.altLeft, LogicalKeyboardKey.altRight, LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.metaRight,
       LogicalKeyboardKey.control, LogicalKeyboardKey.shift, LogicalKeyboardKey.alt, LogicalKeyboardKey.meta,
