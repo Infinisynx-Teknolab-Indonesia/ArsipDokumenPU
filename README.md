@@ -1,12 +1,12 @@
 # Arsip Dokumen PU — Aplikasi Desktop (Windows & macOS)
 
 Aplikasi arsip dokumen proyek Pekerjaan Umum (jalan, jembatan, gedung, irigasi, drainase).
-Berjalan layar penuh dengan tampilan gaya Batam ChitChat. Bisa dipakai offline dan mengunggah otomatis saat internet kembali.
+Berjalan layar penuh dengan tampilan sama seperti versi web (DocArchive): top bar + sidebar terang, kartu bersih, animasi halus, dan 6 pilihan tema. Bisa dipakai offline dan mengunggah otomatis saat internet kembali.
 
 Repo ini berisi tiga bagian:
 - **Aplikasi Arsip Dokumen** (folder utama), untuk staf & admin, beserta pembuat installer Windows/macOS.
 - **Server API** FastAPI + MySQL, di folder [`server/`](server/README.md).
-- **Aplikasi Admin Server**, untuk persetujuan PC, member, email SMTP, keamanan, dan log, di folder [`admin_app/`](admin_app/README.md).
+- Fitur **Admin Server** (persetujuan PC, member, email SMTP, keamanan, log) sudah **menyatu di aplikasi desktop** — login sebagai admin, menu ada di bagian *Admin Server* di sidebar. Tidak ada aplikasi admin terpisah lagi.
 
 **Unduh installer jadi:** tab **Actions** → run terbaru *Build Installer Windows & macOS* → bagian **Artifacts**, atau halaman **Releases** untuk versi bertag.
 
@@ -136,44 +136,51 @@ PC tujuan **tidak perlu** Flutter, Python, ataupun MySQL. Cukup bisa menjangkau 
 
 > **Penting soal login:** `administrator / administrator` hanya berlaku **sebelum** aplikasi terhubung ke server. Setelah terhubung (di layar login tertulis *Terhubung ke http://...*), masuk dengan akun server. Admin bawaan server adalah **admin / Admin@12345**. Lupa password admin? Di folder server jalankan `D:\python3.12\python.exe reset_admin.py`.
 
-1. Aplikasi terbuka layar penuh. **F11** untuk keluar/masuk layar penuh, dan tombol **Keluar Aplikasi** ada di sidebar.
-2. Login `administrator / administrator`, lalu buka menu **Server API**.
+1. Aplikasi terbuka layar penuh. **F11** untuk keluar/masuk layar penuh. **Keluar aplikasi**, Logout, dan kecilkan ke tray ada di menu foto profil (pojok kanan atas).
+2. Login `administrator / administrator`, lalu buka menu **Admin Server → Koneksi Server**.
 3. Isi alamat server, misalnya `http://192.168.1.10:8000/api`, klik **Tes Koneksi**, lalu login dengan akun **admin server**, kemudian **Simpan & Hubungkan**.
-4. Akun `administrator` bawaan otomatis nonaktif. Tambahkan staf di **Staf & Admin**.
+4. Akun `administrator` bawaan otomatis nonaktif. Tambahkan staf di **Admin Server → Staf & Admin**, lalu setujui PC staf di **Admin Server → Perangkat (PC)**.
 5. Lakukan langkah 2–3 sekali di setiap PC (oleh admin). Setelah itu staf cukup login.
 
 ## Tampilan
 
-Tema "gambar kerja PU": sidebar biru tinta, halaman kertas terang, kartu putih bergaris tipis tanpa bayangan, dan satu aksen kuning marka jalan.
+Mengikuti versi web (DocArchive / ArsipIQ): **top bar** berisi logo, kolom cari seluruh arsip (**Ctrl K**), status offline/online, tombol **+ Tambah Dokumen**, dan menu foto profil; **sidebar** berisi menu utama, **Kategori** dan **Per tahun** (dengan jumlah dokumen, bisa dilipat), menu **Kerja**, menu **Admin Server** (khusus admin), dan kartu "Tersimpan di server %".
 
-- **Huruf:** Plus Jakarta Sans, sudah dibundel di `assets/fonts` (lisensi OFL), jadi tampilannya sama di Windows dan macOS.
+- **Huruf:** Inter (teks) + Plus Jakarta Sans (judul), dibundel di `assets/fonts` (lisensi OFL), sama seperti versi web.
+- **6 tema** — *Pengaturan → Tema tampilan*: **Indigo** (bawaan, sama dengan web), **Biru PU**, **Zamrud**, **Grafit**, **Konstruksi**, dan **Malam** (gelap). Pilihan tersimpan di PC itu.
 - **Animasi:**
-  - pindah menu → halaman bergeser masuk sambil memudar;
-  - penanda kuning di sidebar meluncur ke menu yang dipilih;
-  - judul halaman bergeser saat berganti;
-  - form login meluncur dari kanan;
-  - gambar jembatan di layar login tergambar sendiri satu kali.
-- Semua animasi otomatis dimatikan kalau "kurangi animasi" aktif di pengaturan Windows/macOS.
-- Warna, huruf, dan durasi animasi diatur di satu tempat: `lib/theme/ym_theme.dart`.
+  - pindah menu → halaman naik sambil memudar;
+  - latar menu aktif di sidebar **meluncur** ke menu yang dipilih; kategori & tahun dilipat/dibuka dengan animasi;
+  - kartu dan daftar dokumen muncul berurutan, angka statistik **menghitung naik**, grafik & batang progres terisi perlahan;
+  - kartu terangkat saat disorot mouse; titik status online berdenyut;
+  - detail dokumen meluncur dari kanan; *Data dokumen ↔ File asli* bergeser dengan penanda yang meluncur;
+  - form login meluncur dari kanan, gambar jembatan tergambar sendiri.
+- **Kurangi animasi** bisa dinyalakan di *Pengaturan → Animasi* (otomatis aktif juga bila disetel di Windows/macOS).
+- Semua warna, huruf, dan durasi animasi diatur di satu tempat: `lib/theme/ym_theme.dart` (menambah tema = menambah satu `AppPalette`).
 
 ## Fitur
 
 | Menu | Isi |
 |---|---|
 | **Login** | Admin & staf. Sebelum terhubung ke server hanya akun `administrator / administrator` yang bisa masuk. Setelah terhubung, login memakai akun server dan **tetap bisa login offline** |
-| **Dashboard** | Total dokumen, proyek berjalan, nilai kontrak TA berjalan, antrian upload, grafik per kategori, dokumen terbaru |
-| **Dokumen Saya** | Semua dokumen yang diinput user tersebut, dengan tab Hari ini / **Draf** / Menunggu upload / Gagal / Tersimpan di server, kirim draf, upload ulang, dan export laporan kerja |
-| **Unggah Dokumen** | **Lihat isi** tiap file sebelum disimpan, lalu **Periksa & Simpan** (ringkasan data + file) → *Kirim sekarang* atau *Simpan draf*. Isian: proyek, kategori PU (Kontrak, SPMK, RAB/BoQ, Gambar, As-Built, Laporan Harian/Mingguan/Bulanan, MC/Opname, Foto Progres, BA PHO/FHO, Uji Mutu, Surat, Izin, Keuangan, K3), nomor, tanggal, tag, keterangan. Bisa **banyak file sekaligus**. Format: PDF, Word, Excel, TXT, foto, DWG, ZIP/RAR |
-| **Arsip Dokumen** | Pencarian + filter (proyek, kategori, tahun, jenis file, status upload), urutan, **membuka dokumen langsung di aplikasi** (PDF, Word, Excel, CSV, TXT, foto; tanpa WPS/Office) dengan kata yang dicari langsung tersorot, buka dengan aplikasi lain bila perlu, simpan salinan, lihat di folder, edit info, hapus, **Export Excel (CSV)** |
-| **Permintaan Edit** | Staf tidak bisa mengubah dokumen yang sudah diarsipkan secara langsung. Staf **mengajukan perubahan** (data dan/atau file pengganti + alasan), admin melihat perbandingan lama → baru lalu **Setujui & Terapkan** atau **Tolak** dengan alasan. File lama disimpan di **Riwayat Versi** |
-| **Kamus Pencarian** | Hubungkan istilah dengan kata/kode, misalnya `pengeluaran = belanja, biaya, 544`. Berlaku dua arah |
-| **Proyek / Paket** | Kode paket, lokasi, TA, sumber dana, nilai kontrak, kontraktor, konsultan, PPK, jadwal, status, progres %. Bisa langsung lihat atau unggah dokumen per proyek. Export CSV |
-| **Staf & Admin** (admin) | Tambah, edit, reset password, aktif/nonaktif, hapus akun (NIP, jabatan) |
-| **Log Aktivitas** (admin) | Semua login, upload, unduh, ubah, dan hapus, lengkap dengan IP |
-| **Server API** (admin) | Alamat API (FastAPI / C#), tes koneksi, hubungkan, ganti server, putuskan koneksi |
-| **Profil Saya** | Info akun, statistik input (hari ini, bulan ini, total), ganti password, Logout, Keluar Aplikasi |
-| **Panduan** | Langkah pemakaian untuk staf (dan bagian khusus admin) |
-| **Penyimpanan & Info** | Lokasi database lokal, ukuran file, bersihkan cache unduhan |
+| **Dashboard** | Ringkasan arsip & operasional: total dokumen (+ grafik mingguan), isi file terbaca, **perlu tindakan**, tersimpan di PC; distribusi kategori & penyimpanan, unggah cepat, daftar tindakan segera (gagal unggah, draf, permintaan edit, PC baru), aktivitas terbaru, proyek berjalan, ekspor CSV |
+| **Semua Dokumen** | Kartu dokumen gaya web: kategori, status, nomor, tanggal, proyek, ukuran, status sinkron (*Di PC & server / Di server / Di PC, menunggu server*), tombol **Lihat / Detail / ⋮**. Filter kategori, tahun, proyek, jenis file, urutan; chip cepat *Baru ditambahkan / Perlu ditinjau / Menunggu sinkron / Hari ini*; tampilan kartu atau ringkas; halaman 1-2-3; ekspor CSV |
+| **Dokumen Saya** | Semua dokumen yang diinput user tersebut (draf, menunggu, gagal, tersimpan), kirim semua draf, upload ulang |
+| **Tersimpan di PC Ini** | Dokumen yang belum ada di server (draf, antrian, gagal) — terkirim otomatis saat server online |
+| **Detail dokumen** | Halaman penuh gaya ArsipIQ: **Data dokumen** (judul, tanggal, referensi, tab Data / Proyek / Terkait / Riwayat versi; klik nilai mana saja → panel **Detail nilai**: salin, **cari di file asli** dengan sorotan, cari dokumen lain) dan **File asli** (penampil di dalam aplikasi). Cetak, kirim email, layar penuh, edit / ajukan perubahan, kirim draf, hapus |
+| **Unggah Dokumen** | **Lihat isi** tiap file sebelum disimpan, lalu **Periksa & Simpan** → *Kirim sekarang* atau *Simpan draf*. Banyak file sekaligus. Format: PDF, Word, Excel, TXT, foto, DWG, ZIP/RAR |
+| **Permintaan Edit** | Staf mengajukan perubahan dokumen yang sudah diarsipkan, admin **Setujui & Terapkan** atau **Tolak**. File lama disimpan di **Riwayat Versi** |
+| **Proyek / Paket** | Data paket pekerjaan + dokumennya, export CSV |
+| **Kamus Pencarian** | Hubungkan istilah dengan kata/kode, misalnya `pengeluaran = belanja, biaya, 544` |
+| **Admin Server → Ringkasan Server** | PC menunggu/disetujui, member, dokumen di server, status persetujuan PC & email |
+| **Admin Server → Perangkat (PC)** | **Setujui / Tolak / Cabut / ganti nama** PC. Badge merah di sidebar bila ada PC baru menunggu |
+| **Admin Server → Staf & Admin** | Tambah, edit, reset password, aktif/nonaktif, hapus akun |
+| **Admin Server → Email (SMTP)** | Server email untuk "Kirim ke email" (preset Gmail / Outlook / Yahoo / mail instansi), **kirim tes** |
+| **Admin Server → Keamanan** | Wajib setujui PC baru (bawaan aktif) |
+| **Admin Server → Log Aktivitas** | Semua login, upload, unduh, kirim email, ubah, dan hapus, lengkap dengan IP |
+| **Admin Server → Koneksi Server** | Alamat API, tes koneksi, hubungkan, ganti / putuskan server |
+| **Pengaturan** | **Tema tampilan** (6 tema), kurangi animasi, penyimpanan lokal, bersihkan cache, pintasan keyboard, versi |
+| **Profil Saya / Panduan** | Lewat menu foto profil di pojok kanan atas |
 
 ### Pencarian pintar & dokumen terkait
 
@@ -188,11 +195,11 @@ Tema "gambar kerja PU": sidebar biru tinta, halaman kertas terang, kartu putih b
 - Tombol **Cetak** (atau **Ctrl+P / ⌘P**) ada di penampil dokumen, layar penuh, dan detail dokumen. Dialognya berisi pilihan **printer**, **jumlah salinan**, **halaman tertentu** (mis. `1-3, 5`), dan **Simpan PDF**.
   - PDF dicetak langsung. **Word** dicetak persis seperti tampilannya, **Excel/CSV** sebagai tabel A4 mendatar, **teks dan foto** sebagai halaman A4.
   - Windows memakai printer Windows langsung (tanpa WPS/Office). macOS memakai sistem cetak bawaan Mac.
-- Tombol **Kirim Email** mengirim dokumen yang sudah tersimpan di server ke satu atau beberapa alamat, dengan CC, subjek, dan pesan. File asli dikirim **oleh server** sebagai lampiran lewat email yang diatur admin di aplikasi **Admin Server**, dan tercatat di Log Aktivitas.
+- Tombol **Kirim Email** mengirim dokumen yang sudah tersimpan di server ke satu atau beberapa alamat, dengan CC, subjek, dan pesan. File asli dikirim **oleh server** sebagai lampiran lewat email yang diatur admin di menu **Admin Server → Email (SMTP)**, dan tercatat di Log Aktivitas.
 
 ### PC baru wajib disetujui admin
-- Aplikasi bisa dipasang di mana saja, tetapi **staf baru bisa login setelah PC itu disetujui** di aplikasi **Admin Server** (folder `admin_app/`). Admin tetap bisa login untuk menghubungkan PC.
-- Layar login menampilkan status PC: *menunggu persetujuan* atau *ditolak/dicabut*. Menu **Server API** juga menampilkan status persetujuan PC ini.
+- Aplikasi bisa dipasang di mana saja, tetapi **staf baru bisa login setelah PC itu disetujui** di menu **Admin Server → Perangkat (PC)**. Admin tetap bisa login untuk menghubungkan PC.
+- Layar login menampilkan status PC: *menunggu persetujuan* atau *ditolak/dicabut*. Menu **Koneksi Server** juga menampilkan status persetujuan PC ini.
 - PC yang ditolak atau dicabut otomatis menghapus akun yang tersimpan, sehingga login offline juga tertutup.
 
 ### Penampil dokumen di dalam aplikasi (tanpa WPS / Office)
@@ -223,7 +230,7 @@ Tema "gambar kerja PU": sidebar biru tinta, halaman kertas terang, kartu putih b
 - Simpan dokumen saat internet **atau server mati**: file disalin ke PC dan masuk antrian. Aplikasi mengecek server **setiap 10 detik**, lalu **mengirim otomatis begitu server hidup lagi**, tanpa perlu menekan apa pun. Kalau server menjawab error 5xx (misalnya MySQL mati), dokumen tetap mengantri dan dicoba lagi. Upload aman diulang karena server memakai `client_id` sebagai anti-duplikat.
 - **Login offline (admin & staf)**: semua akun aktif di server disalin ke PC sebagai hash PBKDF2 (bukan password asli). Kalau server mati, login tetap jalan dengan akun yang sama seperti di server.
 - Saat pertama kali terhubung, setiap PC mendapat **kunci PC**. Dengan kunci itu, daftar akun diperbarui **tiap 5 menit, juga saat aplikasi masih di layar login**. Staf yang baru ditambahkan admin langsung bisa login di semua PC walau server mati sesudahnya. Jumlah akun yang tersimpan terlihat di layar login.
-- Akun yang dinonaktifkan atau dihapus admin ikut terblokir di semua PC pada sinkron berikutnya. **Laptop hilang?** Admin membuka *Server API → PC terdaftar → Cabut*, dan akun yang tersimpan di laptop itu terhapus begitu terhubung lagi.
+- Akun yang dinonaktifkan atau dihapus admin ikut terblokir di semua PC pada sinkron berikutnya. **Laptop hilang?** Admin membuka *Admin Server → Perangkat (PC) → Cabut*, dan akun yang tersimpan di laptop itu terhapus begitu terhubung lagi.
 - Metadata seluruh arsip juga disalin ke PC, jadi pencarian dan filter tetap jalan saat offline. File dari server diunduh saat dibuka, lalu bisa dibuka lagi tanpa internet.
 
 ## Untuk developer

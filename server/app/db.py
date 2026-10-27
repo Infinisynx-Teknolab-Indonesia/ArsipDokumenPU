@@ -261,7 +261,7 @@ class Device(Base):
 
 
 class Setting(Base):
-    """Pengaturan server yang diubah lewat aplikasi Admin Server (SMTP email,
+    """Pengaturan server yang diubah lewat menu Admin Server di aplikasi (SMTP email,
     persetujuan PC, dll.) — key/value."""
     __tablename__ = "settings"
 

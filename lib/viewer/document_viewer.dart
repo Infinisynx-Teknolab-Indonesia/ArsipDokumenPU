@@ -222,7 +222,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
           Container(
             height: 54,
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: const BoxDecoration(gradient: LinearGradient(colors: [YmColors.titleBarStart, YmColors.titleBarEnd])),
+            decoration: BoxDecoration(gradient: LinearGradient(colors: [YmColors.titleBarStart, YmColors.titleBarEnd])),
             child: Row(children: [
               IconButton(
                 tooltip: 'Kembali (Esc)',

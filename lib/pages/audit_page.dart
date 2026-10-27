@@ -87,7 +87,7 @@ class _AuditPageState extends State<AuditPage> with PageSearchField<AuditPage> {
                       focusNode: searchFocus,
                       onSubmitted: (_) => _load(),
                       decoration: fieldDecoration('Cari username, aksi, atau detail lalu tekan Enter', icon: Icons.search_rounded)
-                          .copyWith(fillColor: Colors.white),
+                          .copyWith(fillColor: YmColors.surface),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -100,7 +100,7 @@ class _AuditPageState extends State<AuditPage> with PageSearchField<AuditPage> {
                 ],
               ),
               const SizedBox(height: 12),
-              if (_error != null) Text(_error!, style: const TextStyle(color: YmColors.buzzRed)),
+              if (_error != null) Text(_error!, style: TextStyle(color: YmColors.buzzRed)),
               Expanded(
                 child: Panel(
                   expand: true,
@@ -113,7 +113,7 @@ class _AuditPageState extends State<AuditPage> with PageSearchField<AuditPage> {
                           ? const EmptyState(icon: Icons.history_toggle_off_rounded, title: 'Belum ada aktivitas', message: 'Aktivitas pengguna akan tercatat di sini.')
                           : ListView.separated(
                               itemCount: _items!.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1, color: YmColors.borderLavender),
+                              separatorBuilder: (_, __) => Divider(height: 1, color: YmColors.borderLavender),
                               itemBuilder: (context, i) {
                                 final e = _items![i];
                                 final (icon, color) = _style(e.action);

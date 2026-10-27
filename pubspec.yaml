@@ -38,6 +38,18 @@ flutter:
   # Plus Jakarta Sans — huruf karya desainer Jakarta (lisensi OFL, assets/fonts/OFL-PlusJakartaSans.txt).
   # Dibundel supaya tampilan sama persis di semua PC Windows & Mac.
   fonts:
+    # Inter = teks isi, Plus Jakarta Sans = judul (sama seperti versi web)
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Italic.ttf
+          style: italic
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
     - family: PlusJakartaSans
       fonts:
         - asset: assets/fonts/PlusJakartaSans-Regular.ttf

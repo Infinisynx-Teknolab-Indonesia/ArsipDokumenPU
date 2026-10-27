@@ -155,11 +155,11 @@ def _device_block_reason(dev: "Device | None") -> str | None:
     """None = PC boleh dipakai; selain itu alasan penolakan untuk ditampilkan."""
     if dev is None:
         return ("PC ini belum terdaftar di server. Minta admin menghubungkan PC ini (login administrator → "
-                "menu Server API), lalu menyetujuinya di aplikasi Admin Server.")
+                "menu Koneksi Server), lalu menyetujuinya di menu Admin Server → Perangkat (PC).")
     if not dev.active or dev.status == "rejected":
         return f"PC ini (#{dev.id} {dev.name}) DITOLAK / dicabut oleh admin. Hubungi admin server."
     if dev.status != "approved":
-        return f"PC ini (#{dev.id} {dev.name}) MENUNGGU PERSETUJUAN admin server. Minta admin menyetujui di aplikasi Admin Server."
+        return f"PC ini (#{dev.id} {dev.name}) MENUNGGU PERSETUJUAN admin server. Minta admin menyetujui di menu Admin Server → Perangkat (PC)."
     return None
 
 
@@ -282,7 +282,7 @@ def login(body: LoginIn, request: Request, db: DB, x_device_key: Annotated[str |
         db.commit()
         raise HTTPException(403, "Akun ini dinonaktifkan. Hubungi admin.")
     # PC baru wajib disetujui admin. Akun admin dikecualikan (untuk menghubungkan
-    # PC baru & aplikasi Admin Server), staf ditolak sampai PC disetujui.
+    # PC baru & membuka menu Admin Server), staf ditolak sampai PC disetujui.
     dev = _find_device(db, x_device_key)
     if user.role != "admin" and device_approval_on(db):
         reason = _device_block_reason(dev)
@@ -1077,7 +1077,7 @@ def _send_email(db: Session, to: list[str], cc: list[str], subject: str, text_bo
                 attachments: list[tuple[str, bytes, str]]) -> None:
     host = get_setting(db, "smtp_host").strip()
     if not host:
-        raise HTTPException(400, "Email belum diatur. Admin perlu mengisi pengaturan SMTP di aplikasi Admin Server.")
+        raise HTTPException(400, "Email belum diatur. Admin perlu mengisi pengaturan SMTP di menu Admin Server → Email (SMTP).")
     port = int(get_setting(db, "smtp_port") or 587)
     security = get_setting(db, "smtp_security") or "starttls"
     user = get_setting(db, "smtp_user").strip()
@@ -1085,7 +1085,7 @@ def _send_email(db: Session, to: list[str], cc: list[str], subject: str, text_bo
     from_email = get_setting(db, "smtp_from_email").strip() or user
     from_name = get_setting(db, "smtp_from_name").strip() or "Arsip Dokumen PU"
     if not from_email:
-        raise HTTPException(400, "Alamat email pengirim belum diatur di Admin Server.")
+        raise HTTPException(400, "Alamat email pengirim belum diatur di menu Admin Server → Email (SMTP).")
 
     msg = EmailMessage()
     msg["Subject"] = subject
@@ -1211,7 +1211,7 @@ def email_document(doc_id: int, body: DocEmailIn, user: CurrentUser, db: DB, req
 
 @app.get("/api/admin/overview")
 def admin_overview(_: AdminUser, db: DB):
-    """Ringkasan untuk dashboard aplikasi Admin Server."""
+    """Ringkasan untuk menu Admin Server → Ringkasan Server di aplikasi."""
     devices = db.scalars(select(Device)).all()
     by_status: dict[str, int] = {}
     for dv in devices:

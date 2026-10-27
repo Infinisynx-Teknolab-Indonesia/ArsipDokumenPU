@@ -157,14 +157,14 @@ class _TermsPageState extends State<TermsPage> with PageSearchField<TermsPage> {
                       controller: _test,
                       focusNode: searchFocus,
                       onChanged: (_) => setState(() {}),
-                      decoration: fieldDecoration('Coba kata kunci', icon: Icons.science_rounded, hint: 'mis. pengeluaran').copyWith(fillColor: Colors.white),
+                      decoration: fieldDecoration('Coba kata kunci', icon: Icons.science_rounded, hint: 'mis. pengeluaran').copyWith(fillColor: YmColors.surface),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       _test.text.trim().isEmpty ? '' : (extra.isEmpty ? 'Tidak ada perluasan dari kamus.' : 'Juga mencari: ${extra.join(', ')}'),
-                      style: const TextStyle(fontSize: 12.5, color: YmColors.accentPurple, fontWeight: FontWeight.w600),
+                      style: TextStyle(fontSize: 12.5, color: YmColors.accentPurple, fontWeight: FontWeight.w600),
                     ),
                   ),
                   if (_test.text.trim().isNotEmpty)
@@ -186,7 +186,7 @@ class _TermsPageState extends State<TermsPage> with PageSearchField<TermsPage> {
                       ? const EmptyState(icon: Icons.menu_book_rounded, title: 'Kamus kosong', message: 'Tambahkan istilah dan kata/kode terkaitnya.')
                       : ListView.separated(
                           itemCount: terms.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1, color: YmColors.borderLavender),
+                          separatorBuilder: (_, __) => Divider(height: 1, color: YmColors.borderLavender),
                           itemBuilder: (context, i) {
                             final t = terms[i];
                             return ListTile(
@@ -203,7 +203,7 @@ class _TermsPageState extends State<TermsPage> with PageSearchField<TermsPage> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                           decoration: BoxDecoration(color: YmColors.accentPurple.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                                          child: Text(r, style: const TextStyle(fontSize: 11.5, color: YmColors.accentPurple)),
+                                          child: Text(r, style: TextStyle(fontSize: 11.5, color: YmColors.accentPurple)),
                                         ),
                                     ],
                                   ),
@@ -218,7 +218,7 @@ class _TermsPageState extends State<TermsPage> with PageSearchField<TermsPage> {
                                         IconButton(onPressed: canEdit ? () => _edit(t) : null, icon: const Icon(Icons.edit_rounded, size: 18)),
                                         IconButton(
                                           onPressed: canEdit ? () => _delete(t) : null,
-                                          icon: const Icon(Icons.delete_outline_rounded, size: 18, color: YmColors.buzzRed),
+                                          icon: Icon(Icons.delete_outline_rounded, size: 18, color: YmColors.buzzRed),
                                         ),
                                       ],
                                     )

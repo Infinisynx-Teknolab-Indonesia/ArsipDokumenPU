@@ -37,27 +37,11 @@ class AppTitleBar extends StatelessWidget {
           Positioned.fill(
             child: DragToMoveArea(
               child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(colors: [YmColors.titleBarStart, YmColors.titleBarEnd]),
+                // title bar terang, menyatu dengan top bar aplikasi (ikut tema)
+                decoration: BoxDecoration(
+                  color: YmColors.sidebar,
+                  border: Border(bottom: BorderSide(color: YmColors.line)),
                 ),
-                child: Stack(children: [
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: 6,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Colors.white.withOpacity(0.30), Colors.white.withOpacity(0.0)],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(bottom: 0, left: 0, right: 0, child: Container(height: 1.5, color: Colors.black.withOpacity(0.18))),
-                ]),
               ),
             ),
           ),
@@ -65,10 +49,10 @@ class AppTitleBar extends StatelessWidget {
             children: [
               // macOS: sisakan tempat untuk tombol bulat merah/kuning/hijau bawaan sistem
               SizedBox(width: Platform.isMacOS ? 78 : 10),
-              const IgnorePointer(child: Icon(Icons.inventory_2_rounded, color: Colors.white, size: 16)),
+              IgnorePointer(child: Icon(Icons.archive_outlined, color: YmColors.primary, size: 16)),
               const SizedBox(width: 8),
-              const IgnorePointer(
-                child: Text('Arsip Dokumen PU', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+              IgnorePointer(
+                child: Text('Arsip Dokumen PU', style: TextStyle(fontFamily: kFont, color: YmColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
               ),
               const Spacer(),
               ValueListenableBuilder<bool>(
@@ -153,9 +137,9 @@ class _TitleBarButtonState extends State<_TitleBarButton> {
           child: Container(
             width: 44,
             height: 34,
-            color: _hover ? (widget.hoverColor ?? Colors.white.withOpacity(0.2)) : Colors.transparent,
+            color: _hover ? (widget.hoverColor ?? YmColors.surfaceContainer) : Colors.transparent,
             alignment: Alignment.center,
-            child: Icon(widget.icon, size: widget.iconSize, color: Colors.white),
+            child: Icon(widget.icon, size: widget.iconSize, color: _hover && widget.hoverColor != null ? Colors.white : YmColors.textMuted),
           ),
         ),
       ),
@@ -190,7 +174,7 @@ class _WindowFrameState extends State<WindowFrame> {
       builder: (context, full, _) {
         if (!full) {
           return Column(children: [
-            const AppTitleBar(),
+            AppTitleBar(), // bukan const: ikut berganti saat tema diganti
             Expanded(child: KeyedSubtree(key: _contentKey, child: widget.child)),
           ]);
         }
@@ -220,7 +204,7 @@ class _WindowFrameState extends State<WindowFrame> {
                   decoration: BoxDecoration(
                     boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 12)],
                   ),
-                  child: const AppTitleBar(),
+                  child: AppTitleBar(), // bukan const: ikut berganti saat tema diganti
                 ),
               ),
             ),

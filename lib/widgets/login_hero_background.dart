@@ -36,7 +36,13 @@ class _LoginHeroBackgroundState extends State<LoginHeroBackground> with SingleTi
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: YmColors.ink,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [YmColors.primaryDeep, Color.lerp(YmColors.primaryDeep, YmColors.primary, 0.55)!],
+        ),
+      ),
       child: AnimatedBuilder(
         animation: _c,
         builder: (_, __) => CustomPaint(

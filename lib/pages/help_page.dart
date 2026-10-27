@@ -112,7 +112,7 @@ class HelpPage extends StatelessWidget {
                                 height: 20,
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(color: YmColors.accentPurple.withOpacity(0.12), shape: BoxShape.circle),
-                                child: Text('${i + 1}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: YmColors.accentPurple)),
+                                child: Text('${i + 1}', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: YmColors.accentPurple)),
                               ),
                               const SizedBox(width: 10),
                               Expanded(child: Text(s.$3[i], style: YmTextStyles.chatText.copyWith(fontSize: 13, height: 1.4))),

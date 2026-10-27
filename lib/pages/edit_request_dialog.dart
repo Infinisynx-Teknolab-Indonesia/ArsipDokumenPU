@@ -128,7 +128,7 @@ class _EditRequestDialogState extends State<_EditRequestDialog> {
                 decoration: BoxDecoration(color: YmColors.accentPurple.withOpacity(0.07), borderRadius: BorderRadius.circular(10)),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline_rounded, color: YmColors.accentPurple, size: 18),
+                    Icon(Icons.info_outline_rounded, color: YmColors.accentPurple, size: 18),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -182,7 +182,7 @@ class _EditRequestDialogState extends State<_EditRequestDialog> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: 10),
-                Text(_error!, style: const TextStyle(color: YmColors.buzzRed, fontSize: 12.5)),
+                Text(_error!, style: TextStyle(color: YmColors.buzzRed, fontSize: 12.5)),
               ],
             ],
           ),

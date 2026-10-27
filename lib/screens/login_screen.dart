@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final app = AppState.instance;
     return Scaffold(
-      backgroundColor: YmColors.ink,
+      backgroundColor: YmColors.primaryDeep,
       body: LayoutBuilder(builder: (context, c) {
         final wide = c.maxWidth >= 980;
         final form = _FormPanel(child: _form(app));
@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const ArsipLogo(size: 40),
                   const SizedBox(width: 14),
                   Text('Arsip Dokumen PU',
-                      style: TextStyle(fontFamily: kFont, color: Colors.white.withOpacity(0.92), fontWeight: FontWeight.w700, fontSize: 16)),
+                      style: TextStyle(fontFamily: kFontDisplay, color: Colors.white.withOpacity(0.92), fontWeight: FontWeight.w700, fontSize: 17)),
                 ]),
               ),
               Positioned(
@@ -77,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   listenable: app,
                   builder: (_, __) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     const Text('Arsip proyek\njalan, jembatan, dan gedung.',
-                        style: TextStyle(fontFamily: kFont, color: Colors.white, fontSize: 34, height: 1.18, fontWeight: FontWeight.w700, letterSpacing: -0.8)),
+                        style: TextStyle(fontFamily: kFontDisplay, color: Colors.white, fontSize: 36, height: 1.18, fontWeight: FontWeight.w700, letterSpacing: -0.8)),
                     const SizedBox(height: 14),
                     Text(
                       '${app.settings.connected ? app.agencyName : 'Dinas Pekerjaan Umum'} — tetap bisa dipakai tanpa internet, '
@@ -110,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _TopIcon(icon: Icons.power_settings_new_rounded, tooltip: 'Keluar aplikasi', onTap: () => confirmExit(context)),
         ]),
         const SizedBox(height: 56),
-        const Text('Masuk', style: TextStyle(fontFamily: kFont, fontSize: 28, fontWeight: FontWeight.w800, color: YmColors.textDark, letterSpacing: -0.6)),
+        Text('Masuk', style: TextStyle(fontFamily: kFontDisplay, fontSize: 30, fontWeight: FontWeight.w700, color: YmColors.textDark, letterSpacing: -0.6)),
         const SizedBox(height: 6),
         Text('Gunakan akun yang diberikan admin.', style: YmTextStyles.label.copyWith(fontSize: 13.5)),
         const SizedBox(height: 28),
@@ -201,7 +201,7 @@ class _FormPanelState extends State<_FormPanel> with SingleTickerProviderStateMi
       child: SlideTransition(
         position: Tween(begin: const Offset(0.08, 0), end: Offset.zero).animate(_a),
         child: Container(
-          color: Colors.white,
+          color: YmColors.surface,
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(48, 36, 48, 36),
@@ -231,7 +231,7 @@ class _LoginHint extends StatelessWidget {
         tint: pending ? YmColors.marka.withOpacity(0.10) : YmColors.buzzRed.withOpacity(0.07),
         title: pending ? 'PC ini menunggu persetujuan admin' : 'PC ini ditolak atau dicabut admin',
         body: pending
-            ? 'PC #${app.settings.deviceId}. Staf belum bisa masuk di PC ini sampai admin menyetujuinya di aplikasi Admin Server → Perangkat (PC). Akun admin tetap bisa masuk.'
+            ? 'PC #${app.settings.deviceId}. Staf belum bisa masuk di PC ini sampai admin menyetujuinya di menu Admin Server → Perangkat (PC). Akun admin tetap bisa masuk.'
             : 'PC #${app.settings.deviceId}. Staf tidak bisa masuk di PC ini. Hubungi admin server.',
       );
     }
@@ -262,16 +262,17 @@ class _LoginHint extends StatelessWidget {
 class _HintBox extends StatelessWidget {
   final IconData icon;
   final String title, body;
-  final Color color;
+  final Color? tone;
   final Color? tint;
-  const _HintBox({required this.icon, required this.title, required this.body, this.color = YmColors.textMuted, this.tint});
+  const _HintBox({required this.icon, required this.title, required this.body, Color? color, this.tint}) : tone = color;
 
   @override
   Widget build(BuildContext context) {
+    final color = tone ?? YmColors.textMuted;
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: tint ?? YmColors.paper,
+        color: tint ?? YmColors.surfaceAlt,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: tint == null ? YmColors.line : color.withOpacity(0.3)),
       ),
@@ -282,7 +283,7 @@ class _HintBox extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title, style: TextStyle(fontFamily: kFont, fontSize: 12.5, fontWeight: FontWeight.w700, color: tint == null ? YmColors.textDark : color)),
             const SizedBox(height: 3),
-            Text(body, style: const TextStyle(fontFamily: kFont, fontSize: 12, height: 1.5, color: YmColors.textMuted)),
+            Text(body, style: TextStyle(fontFamily: kFont, fontSize: 12, height: 1.5, color: YmColors.textMuted)),
           ]),
         ),
       ]),
@@ -336,14 +337,14 @@ class _Field extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontFamily: kFont, fontSize: 12.5, fontWeight: FontWeight.w600, color: YmColors.textDark)),
+      Text(label, style: TextStyle(fontFamily: kFont, fontSize: 12.5, fontWeight: FontWeight.w600, color: YmColors.textDark)),
       const SizedBox(height: 7),
       TextField(
         controller: controller,
         obscureText: obscure,
         autofocus: autofocus,
         onSubmitted: onSubmitted,
-        style: const TextStyle(fontFamily: kFont, fontSize: 14, color: YmColors.textDark),
+        style: TextStyle(fontFamily: kFont, fontSize: 14, color: YmColors.textDark),
         decoration: InputDecoration(
           prefixIcon: Icon(icon, size: 19, color: YmColors.textMuted),
           suffixIcon: suffix,

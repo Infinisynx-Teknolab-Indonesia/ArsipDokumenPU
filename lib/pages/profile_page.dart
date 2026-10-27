@@ -90,7 +90,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   Container(
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [YmColors.titleBarStart, YmColors.titleBarEnd]),
+                      gradient: LinearGradient(colors: [YmColors.titleBarStart, YmColors.titleBarEnd]),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -201,7 +201,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                               if (_error != null) ...[
                                 const SizedBox(height: 10),
-                                Text(_error!, style: const TextStyle(color: YmColors.buzzRed, fontSize: 12.5)),
+                                Text(_error!, style: TextStyle(color: YmColors.buzzRed, fontSize: 12.5)),
                               ],
                               const SizedBox(height: 14),
                               Align(

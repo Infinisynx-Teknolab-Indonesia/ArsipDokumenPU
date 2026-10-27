@@ -88,11 +88,11 @@ Tabel: `devices(id, name, key_hash UNIQUE, registered_by, created_at, last_seen,
 
 ### Persetujuan PC (pengaturan `device_approval`, default AKTIF)
 - Aplikasi mengirim header **`X-Device-Key`** di SEMUA permintaan.
-- `POST /auth/login` untuk akun **staf**: ditolak `403` (pesan jelas) bila PC belum terdaftar, **menunggu**, ditolak, atau dicabut. Akun **admin** dikecualikan (untuk menghubungkan PC baru & aplikasi Admin Server).
+- `POST /auth/login` untuk akun **staf**: ditolak `403` (pesan jelas) bila PC belum terdaftar, **menunggu**, ditolak, atau dicabut. Akun **admin** dikecualikan (untuk menghubungkan PC baru & membuka menu Admin Server).
 - `GET /auth/offline-users` dari PC yang belum disetujui hanya berisi akun peminta sendiri; `GET /devices/offline-users` menjawab `403` saat menunggu dan `401` saat ditolak/dicabut (aplikasi lalu menghapus akun yang tersimpan).
 - PC yang terdaftar sebelum fitur ini ada otomatis dianggap **disetujui**.
 
-## Admin Server (khusus admin — dipakai aplikasi `admin_app`)
+## Admin Server (khusus admin — dipakai menu Admin Server di aplikasi)
 
 | Method | Path | Keterangan |
 |---|---|---|

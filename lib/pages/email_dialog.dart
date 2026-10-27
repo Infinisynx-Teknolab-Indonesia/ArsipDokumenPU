@@ -7,7 +7,7 @@ import '../widgets/common.dart';
 import '../widgets/ui.dart';
 
 /// Kirim dokumen ke email. File asli dilampirkan OLEH SERVER (lewat SMTP yang
-/// diatur admin di aplikasi Admin Server) dan tercatat di log aktivitas.
+/// diatur admin di menu Email (SMTP)) dan tercatat di log aktivitas.
 Future<void> showEmailDialog(BuildContext context, DocRecord doc) {
   final app = AppState.instance;
   if (doc.serverId == null) {
@@ -85,7 +85,7 @@ class _EmailDialogState extends State<_EmailDialog> {
     final d = widget.doc;
     return AlertDialog(
       title: Row(children: [
-        const Icon(Icons.forward_to_inbox_rounded, color: YmColors.accentPurple),
+        Icon(Icons.forward_to_inbox_rounded, color: YmColors.accentPurple),
         const SizedBox(width: 10),
         Text('Kirim dokumen ke email', style: YmTextStyles.username.copyWith(fontSize: 16)),
       ]),
@@ -139,7 +139,7 @@ class _EmailDialogState extends State<_EmailDialog> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(color: YmColors.buzzRed.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
-                child: Text(_error!, style: const TextStyle(color: YmColors.buzzRed, fontSize: 12.5)),
+                child: Text(_error!, style: TextStyle(color: YmColors.buzzRed, fontSize: 12.5)),
               ),
             ],
           ]),

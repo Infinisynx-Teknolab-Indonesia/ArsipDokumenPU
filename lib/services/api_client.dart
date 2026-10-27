@@ -211,6 +211,43 @@ class ApiClient {
     _decode(res);
   }
 
+  Future<void> approveDevice(String token, int id) async {
+    _decode(await _send(() => http.post(_u('/devices/$id/approve'), headers: _headers(token))));
+  }
+
+  Future<void> rejectDevice(String token, int id) async {
+    _decode(await _send(() => http.post(_u('/devices/$id/reject'), headers: _headers(token))));
+  }
+
+  Future<void> renameDevice(String token, int id, String name) async {
+    _decode(await _send(() => http.patch(_u('/devices/$id'), headers: _headers(token), body: jsonEncode({'name': name}))));
+  }
+
+  // ----------------------------------------------------------- admin server
+
+  /// Ringkasan server: jumlah PC per status, member, dokumen, email.
+  Future<Map<String, dynamic>> adminOverview(String token) async {
+    final res = await _send(() => http.get(_u('/admin/overview'), headers: _headers(token)));
+    return Map<String, dynamic>.from(_decode(res) as Map);
+  }
+
+  /// Pengaturan server (SMTP email, persetujuan PC, dll.).
+  Future<Map<String, dynamic>> adminSettings(String token) async {
+    final res = await _send(() => http.get(_u('/admin/settings'), headers: _headers(token)));
+    return Map<String, dynamic>.from(_decode(res) as Map);
+  }
+
+  Future<Map<String, dynamic>> saveAdminSettings(String token, Map<String, Object?> data) async {
+    final res = await _send(() => http.put(_u('/admin/settings'), headers: _headers(token), body: jsonEncode(data)));
+    return Map<String, dynamic>.from(_decode(res) as Map);
+  }
+
+  Future<void> testEmail(String token, String to) async {
+    final res = await _send(() => http.post(_u('/admin/email/test'), headers: _headers(token), body: jsonEncode({'to': to})),
+        timeout: const Duration(seconds: 60));
+    _decode(res);
+  }
+
   // ----------------------------------------------------------------- users
 
   Future<List<ServerUser>> listUsers(String token) async {

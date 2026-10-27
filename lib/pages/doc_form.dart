@@ -305,7 +305,7 @@ class _SeriesFieldState extends State<_SeriesField> {
                 for (final o in options)
                   ListTile(
                     dense: true,
-                    leading: const Icon(Icons.account_tree_rounded, size: 18, color: YmColors.accentPurple),
+                    leading: Icon(Icons.account_tree_rounded, size: 18, color: YmColors.accentPurple),
                     title: Text(o),
                     onTap: () => onSelected(o),
                   ),

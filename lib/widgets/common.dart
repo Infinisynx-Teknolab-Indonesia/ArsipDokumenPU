@@ -4,12 +4,13 @@ import '../services/app_state.dart';
 import '../services/tray_service.dart';
 import '../services/window_ctl.dart';
 
-/// Kartu konten: putih, garis tepi 1px, tanpa bayangan. Judul (opsional) di
-/// baris atas yang dipisah garis tipis — rapi & tenang.
+/// Kartu konten gaya versi web: permukaan putih, sudut 12, bayangan sangat
+/// halus. Judul (opsional) di atas dengan ikon kecil di ubin berwarna lembut.
 class Panel extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final String? title;
+  final String? subtitle;
   final IconData? icon;
   final Widget? trailing;
 
@@ -17,34 +18,67 @@ class Panel extends StatelessWidget {
   /// false (default) = setinggi isinya, aman di dalam scroll view.
   final bool expand;
 
-  const Panel({super.key, required this.child, this.padding = const EdgeInsets.all(20), this.title, this.icon, this.trailing, this.expand = false});
+  /// Warna latar lain (mis. kartu peringatan).
+  final Color? color;
+
+  const Panel({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(20),
+    this.title,
+    this.subtitle,
+    this.icon,
+    this.trailing,
+    this.expand = false,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Material transparan: efek klik ListTile/InkWell tergambar DI ATAS
-    // latar putih panel (tanpa ini Flutter terus memberi peringatan
-    // "ListTile background color or ink splashes may be invisible").
+    // Material transparan: efek klik ListTile/InkWell tergambar di atas latar panel.
     final body = Material(type: MaterialType.transparency, child: Padding(padding: padding, child: child));
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: YmColors.surface,
+        color: color ?? YmColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: YmColors.line),
+        border: YmColors.isDark ? Border.all(color: YmColors.line) : null,
+        boxShadow: softShadow,
       ),
       child: Column(
         mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (title != null)
-            Container(
-              constraints: const BoxConstraints(minHeight: 50),
-              padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
-              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: YmColors.line))),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 14, 4),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (icon != null) ...[Icon(icon, size: 18, color: YmColors.puBlue), const SizedBox(width: 10)],
-                  Expanded(child: Text(title!, style: YmTextStyles.sectionTitle)),
+                  if (icon != null) ...[
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(color: YmColors.surfaceAlt, borderRadius: BorderRadius.circular(10)),
+                      child: Icon(icon, size: 18, color: YmColors.primary),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(top: icon != null ? 6 : 0),
+                          child: Text(title!, style: YmTextStyles.sectionTitle),
+                        ),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(subtitle!, style: YmTextStyles.label.copyWith(fontSize: 12)),
+                        ],
+                      ],
+                    ),
+                  ),
                   if (trailing != null) trailing!,
                 ],
               ),
@@ -60,43 +94,74 @@ InputDecoration fieldDecoration(String label, {IconData? icon, String? hint, Wid
       labelText: label,
       hintText: hint,
       isDense: true,
-      prefixIcon: icon == null ? null : Icon(icon, size: 18, color: YmColors.textMuted),
+      prefixIcon: icon == null ? null : Icon(icon, size: 18, color: YmColors.outline),
       suffixIcon: suffix,
       filled: true,
-      fillColor: Colors.white,
+      fillColor: YmColors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      labelStyle: const TextStyle(color: YmColors.textMuted, fontSize: 13),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: YmColors.line)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: YmColors.line)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: YmColors.puBlue, width: 1.6)),
+      labelStyle: TextStyle(color: YmColors.textMuted, fontSize: 13),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: YmColors.line)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: YmColors.line)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: YmColors.primary, width: 1.6)),
     );
 
-/// Tombol utama: tinta biru tua (atau warna lain untuk aksi khusus, mis. merah = hapus).
-/// Warna lama "accentPurple" otomatis diterjemahkan ke tinta supaya semua tombol seragam.
-ButtonStyle primaryButtonStyle({Color color = YmColors.ink}) {
-  final c = color == YmColors.accentPurple ? YmColors.ink : color;
+/// Kolom cari gaya web: latar biru sangat muda, tanpa garis, sudut 12,
+/// berubah putih + cincin warna utama saat aktif.
+InputDecoration searchDecoration(String hint, {Widget? suffix}) => InputDecoration(
+      hintText: hint,
+      isDense: true,
+      filled: true,
+      fillColor: YmColors.surfaceAlt,
+      hoverColor: YmColors.surfaceContainer,
+      prefixIcon: Icon(Icons.search_rounded, size: 20, color: YmColors.outline),
+      suffixIcon: suffix,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      hintStyle: TextStyle(fontFamily: kFont, color: YmColors.outline, fontSize: 13.5),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: YmColors.primary.withOpacity(0.35), width: 2)),
+    );
+
+/// Tombol utama: warna utama tema (atau warna lain untuk aksi khusus, mis. merah = hapus).
+ButtonStyle primaryButtonStyle({Color? color}) {
+  final c = color ?? YmColors.primary;
+  final fg = c == YmColors.primary ? YmColors.onPrimary : Colors.white;
   return ElevatedButton.styleFrom(
     backgroundColor: c,
-    foregroundColor: Colors.white,
-    disabledBackgroundColor: YmColors.line,
-    disabledForegroundColor: YmColors.textMuted,
+    foregroundColor: fg,
+    disabledBackgroundColor: YmColors.surfaceContainer,
+    disabledForegroundColor: YmColors.outline,
     elevation: 0,
+    shadowColor: c.withOpacity(0.35),
     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    textStyle: const TextStyle(fontFamily: kFont, fontWeight: FontWeight.w600, fontSize: 13),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    textStyle: const TextStyle(fontFamily: kFont, fontWeight: FontWeight.w600, fontSize: 13.5),
   ).copyWith(
-    // sedikit lebih terang saat disorot mouse
-    overlayColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.hovered) ? Colors.white.withOpacity(0.08) : null),
+    // terangkat sedikit saat disorot (versi web: shadow + hover warna lebih terang)
+    elevation: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.hovered) ? 4 : 1),
+    overlayColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.hovered) ? Colors.white.withOpacity(0.10) : null),
   );
 }
 
 ButtonStyle outlineButtonStyle() => OutlinedButton.styleFrom(
       foregroundColor: YmColors.textDark,
-      backgroundColor: Colors.white,
-      side: const BorderSide(color: YmColors.line),
+      backgroundColor: YmColors.surface,
+      side: BorderSide(color: YmColors.line),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       textStyle: const TextStyle(fontFamily: kFont, fontWeight: FontWeight.w600, fontSize: 13),
+    );
+
+/// Tombol lembut (versi web: bg-surface-container-low) — untuk aksi di baris daftar.
+ButtonStyle softButtonStyle({Color? fg, Color? bg}) => TextButton.styleFrom(
+      foregroundColor: fg ?? YmColors.textDark,
+      backgroundColor: bg ?? YmColors.surfaceAlt,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      minimumSize: const Size(0, 36),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+      textStyle: const TextStyle(fontFamily: kFont, fontWeight: FontWeight.w600, fontSize: 12),
+    ).copyWith(
+      overlayColor: WidgetStatePropertyAll(YmColors.primary.withOpacity(0.06)),
     );
 
 void showSnack(BuildContext context, String text, {bool error = false}) {
@@ -104,28 +169,43 @@ void showSnack(BuildContext context, String text, {bool error = false}) {
   messenger.hideCurrentSnackBar();
   messenger.showSnackBar(SnackBar(
     content: Row(children: [
-      Icon(error ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded, color: error ? const Color(0xFFFFB4B4) : YmColors.marka, size: 20),
+      Icon(error ? Icons.error_outline_rounded : Icons.check_circle_rounded, color: error ? const Color(0xFFFFB4AB) : const Color(0xFF82F5C1), size: 20),
       const SizedBox(width: 12),
       Expanded(child: Text(text, style: const TextStyle(fontFamily: kFont, color: Colors.white, fontSize: 13, height: 1.4))),
     ]),
-    backgroundColor: error ? const Color(0xFF8E2A2A) : YmColors.ink,
+    backgroundColor: error ? const Color(0xFF7A1F1A) : const Color(0xFF213145),
     behavior: SnackBarBehavior.floating,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    width: 540,
+    width: 560,
     duration: Duration(seconds: error ? 6 : 3),
   ));
 }
 
 Future<bool> confirmDialog(BuildContext context, {required String title, required String message, String ok = 'Ya', bool danger = false}) async {
-  final r = await showDialog<bool>(
+  final r = await showGeneralDialog<bool>(
     context: context,
-    builder: (c) => AlertDialog(
+    barrierDismissible: true,
+    barrierLabel: 'Tutup',
+    barrierColor: const Color(0x590B1C30),
+    transitionDuration: motion(context, const Duration(milliseconds: 220)),
+    transitionBuilder: (c, a, _, child) {
+      final curved = CurvedAnimation(parent: a, curve: Curves.easeOutBack, reverseCurve: Curves.easeInCubic);
+      return FadeTransition(opacity: a, child: ScaleTransition(scale: Tween(begin: 0.94, end: 1.0).animate(curved), child: child));
+    },
+    pageBuilder: (c, _, __) => AlertDialog(
+      icon: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(color: danger ? YmColors.dangerSoft : YmColors.primarySoft, borderRadius: BorderRadius.circular(12)),
+        child: Icon(danger ? Icons.warning_amber_rounded : Icons.help_outline_rounded, color: danger ? YmColors.danger : YmColors.primary),
+      ),
       title: Text(title),
-      content: SizedBox(width: 420, child: Text(message, style: YmTextStyles.chatText.copyWith(color: YmColors.textMuted))),
+      content: SizedBox(width: 420, child: Text(message, textAlign: TextAlign.center, style: YmTextStyles.chatText.copyWith(color: YmColors.textMuted))),
+      actionsAlignment: MainAxisAlignment.center,
       actions: [
-        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Batal')),
+        OutlinedButton(style: outlineButtonStyle(), onPressed: () => Navigator.pop(c, false), child: const Text('Batal')),
         ElevatedButton(
-          style: primaryButtonStyle(color: danger ? YmColors.buzzRed : YmColors.ink),
+          style: primaryButtonStyle(color: danger ? YmColors.danger : null),
           onPressed: () => Navigator.pop(c, true),
           child: Text(ok),
         ),
@@ -135,52 +215,78 @@ Future<bool> confirmDialog(BuildContext context, {required String title, require
   return r ?? false;
 }
 
-/// Pill status koneksi server.
+/// Pill status koneksi (versi web: "Offline Mode: 4 files local, auto-syncing"
+/// dengan titik berdenyut).
 class NetStatusPill extends StatelessWidget {
   final NetStatus status;
   final bool onDark;
-  const NetStatusPill({super.key, required this.status, this.onDark = false});
+
+  /// Tampilkan jumlah dokumen yang masih di PC (top bar).
+  final bool detailed;
+  const NetStatusPill({super.key, required this.status, this.onDark = false, this.detailed = false});
 
   @override
   Widget build(BuildContext context) {
-    final (Color color, String text, IconData icon) = switch (status) {
-      NetStatus.online => (YmColors.statusOnline, 'Server online', Icons.cloud_done_rounded),
-      NetStatus.offline => (YmColors.buzzRed, 'Offline — data disimpan di PC', Icons.cloud_off_rounded),
-      NetStatus.checking => (YmColors.statusAway, 'Memeriksa server...', Icons.cloud_sync_rounded),
-      NetStatus.notConfigured => (YmColors.statusOffline, 'Belum terhubung ke server', Icons.link_off_rounded),
+    final app = AppState.instance;
+    final local = app.session == null ? 0 : app.pendingCount + app.draftCount;
+    final (Color color, Color bg, String text) = switch (status) {
+      NetStatus.online => (
+          YmColors.success,
+          YmColors.successSoft,
+          detailed && local > 0 ? 'Online · $local dokumen sedang dikirim' : 'Online · tersinkron dengan server'
+        ),
+      NetStatus.offline => (
+          YmColors.warning,
+          YmColors.warningSoft,
+          detailed ? 'Mode offline: $local dokumen di PC, terkirim otomatis' : 'Offline — data disimpan di PC'
+        ),
+      NetStatus.checking => (YmColors.primary, YmColors.primarySoft, 'Memeriksa server…'),
+      NetStatus.notConfigured => (YmColors.outline, YmColors.surfaceContainer, 'Belum terhubung ke server'),
     };
-    // titik status + teks, tanpa kotak berwarna yang ramai
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    return AnimatedContainer(
+      duration: motion(context),
+      curve: kMotionCurve,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: onDark ? Colors.white.withOpacity(0.08) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: onDark ? Colors.white.withOpacity(0.14) : YmColors.line),
+        color: onDark ? Colors.white.withOpacity(0.10) : bg,
+        borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _PulseDot(color: color, pulse: status == NetStatus.checking || status == NetStatus.online),
+          PulseDot(color: color, pulse: status != NetStatus.notConfigured),
           const SizedBox(width: 8),
-          Text(text, style: TextStyle(fontFamily: kFont, fontSize: 12, fontWeight: FontWeight.w600, color: onDark ? Colors.white : YmColors.textDark)),
+          AnimatedSwitcher(
+            duration: motion(context),
+            transitionBuilder: (c, a) => FadeTransition(
+              opacity: a,
+              child: SlideTransition(position: Tween(begin: const Offset(0, 0.4), end: Offset.zero).animate(a), child: c),
+            ),
+            child: Text(
+              text,
+              key: ValueKey(text),
+              style: TextStyle(fontFamily: kFont, fontSize: 12, fontWeight: FontWeight.w600, color: onDark ? Colors.white : Color.lerp(color, YmColors.textDark, 0.25)),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-/// Titik status yang berdenyut pelan (menandakan koneksi hidup).
-class _PulseDot extends StatefulWidget {
+/// Titik status yang berdenyut (versi web: animate-ping).
+class PulseDot extends StatefulWidget {
   final Color color;
   final bool pulse;
-  const _PulseDot({required this.color, required this.pulse});
+  final double size;
+  const PulseDot({super.key, required this.color, this.pulse = true, this.size = 8});
 
   @override
-  State<_PulseDot> createState() => _PulseDotState();
+  State<PulseDot> createState() => _PulseDotState();
 }
 
-class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600));
+class _PulseDotState extends State<PulseDot> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400));
 
   @override
   void didChangeDependencies() {
@@ -189,14 +295,13 @@ class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixi
   }
 
   @override
-  void didUpdateWidget(covariant _PulseDot old) {
+  void didUpdateWidget(covariant PulseDot old) {
     super.didUpdateWidget(old);
     _sync();
   }
 
   void _sync() {
-    final reduce = MediaQuery.maybeOf(context)?.disableAnimations == true;
-    if (widget.pulse && !reduce) {
+    if (widget.pulse && !reduceMotion(context)) {
       if (!_c.isAnimating) _c.repeat();
     } else {
       _c.stop();
@@ -212,47 +317,49 @@ class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixi
 
   @override
   Widget build(BuildContext context) {
+    final s = widget.size;
     return SizedBox(
-      width: 14,
-      height: 14,
+      width: s * 2,
+      height: s * 2,
       child: AnimatedBuilder(
         animation: _c,
-        builder: (_, __) => Stack(alignment: Alignment.center, children: [
-          if (widget.pulse)
-            Container(
-              width: 6 + 8 * _c.value,
-              height: 6 + 8 * _c.value,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color.withOpacity(0.35 * (1 - _c.value))),
-            ),
-          Container(width: 7, height: 7, decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color)),
-        ]),
+        builder: (_, __) {
+          final t = Curves.easeOut.transform(_c.value);
+          return Stack(alignment: Alignment.center, children: [
+            if (widget.pulse)
+              Container(
+                width: s + s * 1.2 * t,
+                height: s + s * 1.2 * t,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color.withOpacity(0.55 * (1 - t))),
+              ),
+            Container(width: s, height: s, decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color)),
+          ]);
+        },
       ),
     );
   }
 }
 
-/// Logo aplikasi (digambar, tanpa file aset).
+/// Logo aplikasi: ubin warna aksen dengan ikon arsip (versi web: rounded-xl bg-primary-container).
 class ArsipLogo extends StatelessWidget {
   final double size;
   const ArsipLogo({super.key, this.size = 64});
 
   @override
   Widget build(BuildContext context) {
-    // Ubin tinta dengan kotak arsip putih + garis marka kuning di bawah
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: YmColors.puBlue,
-        borderRadius: BorderRadius.circular(size * 0.26),
-      ),
-      child: Stack(alignment: Alignment.center, children: [
-        Icon(Icons.inventory_2_rounded, color: Colors.white, size: size * 0.52),
-        Positioned(
-          bottom: size * 0.13,
-          child: Container(width: size * 0.34, height: size * 0.06, decoration: BoxDecoration(color: YmColors.marka, borderRadius: BorderRadius.circular(size))),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color.lerp(YmColors.primary, Colors.white, 0.12)!, YmColors.primary],
         ),
-      ]),
+        borderRadius: BorderRadius.circular(size * 0.28),
+        boxShadow: [BoxShadow(color: YmColors.primary.withOpacity(0.28), blurRadius: size * 0.25, offset: Offset(0, size * 0.08))],
+      ),
+      child: Icon(Icons.archive_outlined, color: Colors.white, size: size * 0.55),
     );
   }
 }
@@ -288,7 +395,7 @@ Future<void> confirmExit(BuildContext context) async {
             label: const Text('Kecilkan ke tray'),
           ),
         ElevatedButton(
-          style: primaryButtonStyle(color: YmColors.buzzRed),
+          style: primaryButtonStyle(color: YmColors.danger),
           onPressed: () => Navigator.pop(c, 'exit'),
           child: const Text('Keluar'),
         ),

@@ -7,7 +7,7 @@
 #   3. Setelah selesai (~15 menit) unduh dari bagian "Artifacts":
 #        ArsipDokumenPU_Windows  -> ArsipDokumenPU_Setup_<versi>.exe       (aplikasi staf/admin)
 #        ArsipDokumenPU_macOS    -> ArsipDokumenPU_<versi>_macOS.dmg
-#   Installer aplikasi Admin Server: workflow terpisah build-admin-server.yml (folder admin_app).
+#   Fitur Admin Server sudah menyatu di aplikasi ini (menu Admin Server), tidak ada installer terpisah.
 #   Push tag (mis. v1.0.1) -> kedua installer juga otomatis dilampirkan ke GitHub Release.
 #
 # Opsional macOS (agar tidak muncul peringatan "developer tidak dikenal"): isi

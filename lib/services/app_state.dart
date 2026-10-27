@@ -258,6 +258,7 @@ class AppState extends ChangeNotifier {
 
   void logout() {
     session = null;
+    pendingDevices = 0;
     syncMessage = null;
     notifyListeners();
   }
@@ -478,7 +479,7 @@ class AppState extends ChangeNotifier {
   }
 
   /// Kirim dokumen ke email (butuh online; dikirim oleh server lewat SMTP
-  /// yang diatur di aplikasi Admin Server).
+  /// yang diatur admin di menu Email (SMTP)).
   Future<List<String>> emailDocument(DocRecord d,
       {required List<String> to, List<String> cc = const [], String subject = '', String message = ''}) async {
     final id = d.serverId;
@@ -489,6 +490,15 @@ class AppState extends ChangeNotifier {
   /// Daftar PC terdaftar (halaman Server API, khusus admin).
   Future<List<Map<String, dynamic>>> listDevices() => withToken((a, t) => a.listDevices(t));
   Future<void> revokeDevice(int id) => withToken((a, t) => a.revokeDevice(t, id));
+  Future<void> approveDevice(int id) => withToken((a, t) => a.approveDevice(t, id));
+  Future<void> rejectDevice(int id) => withToken((a, t) => a.rejectDevice(t, id));
+  Future<void> renameDevice(int id, String name) => withToken((a, t) => a.renameDevice(t, id, name));
+
+  /// Fitur Admin Server (dulu aplikasi terpisah) — sekarang langsung dari aplikasi ini.
+  Future<Map<String, dynamic>> adminOverview() => withToken((a, t) => a.adminOverview(t));
+  Future<Map<String, dynamic>> adminSettings() => withToken((a, t) => a.adminSettings(t));
+  Future<Map<String, dynamic>> saveAdminSettings(Map<String, Object?> data) => withToken((a, t) => a.saveAdminSettings(t, data));
+  Future<void> testEmail(String to) => withToken((a, t) => a.testEmail(t, to));
   int get thisDeviceId => settings.deviceId;
   DateTime? get usersSyncedAt => DateTime.tryParse(settings.usersSyncedAt);
 
@@ -591,6 +601,26 @@ class AppState extends ChangeNotifier {
     } catch (_) {}
   }
 
+  /// Jumlah PC yang menunggu persetujuan (khusus admin) — badge menu Perangkat.
+  int pendingDevices = 0;
+  DateTime? _lastDeviceCount;
+
+  Future<void> refreshDeviceCount({bool force = false}) async {
+    final s = session;
+    if (!canUseServer || s == null || !s.isAdmin) return;
+    final last = _lastDeviceCount;
+    if (!force && last != null && DateTime.now().difference(last) < const Duration(seconds: 60)) return;
+    _lastDeviceCount = DateTime.now();
+    try {
+      final items = await listDevices();
+      final n = items.where((d) => d['status'] == 'pending').length;
+      if (n != pendingDevices) {
+        pendingDevices = n;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
   /// Dipanggil tiap 10 detik + setelah simpan dokumen + tombol "Sinkronkan".
   Future<void> tick({bool forcePull = false}) async {
     if (_tickRunning) return;
@@ -623,6 +653,7 @@ class AppState extends ChangeNotifier {
       await _syncUsers();
       await _uploadPending();
       await pullFromServer(force: forcePull || wasOffline);
+      await refreshDeviceCount(force: forcePull);
     } finally {
       _tickRunning = false;
     }

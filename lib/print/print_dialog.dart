@@ -144,14 +144,14 @@ class _PrintDialogState extends State<_PrintDialog> {
     final ready = _pdf != null;
     return AlertDialog(
       title: Row(children: [
-        const Icon(Icons.print_rounded, color: YmColors.accentPurple),
+        Icon(Icons.print_rounded, color: YmColors.accentPurple),
         const SizedBox(width: 10),
         Expanded(child: Text('Cetak dokumen', style: YmTextStyles.username.copyWith(fontSize: 16))),
       ]),
       content: SizedBox(
         width: 460,
         child: _error != null
-            ? Text('Dokumen tidak bisa disiapkan untuk dicetak:\n$_error', style: const TextStyle(color: YmColors.buzzRed))
+            ? Text('Dokumen tidak bisa disiapkan untuk dicetak:\n$_error', style: TextStyle(color: YmColors.buzzRed))
             : !ready
                 ? const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),

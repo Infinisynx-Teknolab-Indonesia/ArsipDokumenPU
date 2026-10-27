@@ -121,8 +121,8 @@ class _PdfDocViewState extends State<PdfDocView> {
               decoration: InputDecoration(
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 7),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: YmColors.borderLavender)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: YmColors.borderLavender)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: YmColors.borderLavender)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: YmColors.borderLavender)),
               ),
               onSubmitted: (v) => _goToPage(int.tryParse(v.trim()) ?? _page),
             ),

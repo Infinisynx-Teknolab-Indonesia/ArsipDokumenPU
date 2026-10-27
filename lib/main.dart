@@ -11,6 +11,7 @@ import 'screens/login_screen.dart';
 import 'screens/shell_screen.dart';
 import 'widgets/common.dart';
 import 'services/find_shortcut.dart';
+import 'services/nav.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +21,7 @@ Future<void> main() async {
   // ignore: discarded_futures, unawaited_futures
   pdfrxFlutterInitialize();
 
-  const options = WindowOptions(
+  final options = WindowOptions(
     size: Size(1366, 768),
     minimumSize: Size(1100, 680),
     center: true,
@@ -37,6 +38,7 @@ Future<void> main() async {
   });
 
   await AppState.instance.load();
+  await ThemeCtl.instance.load(); // tema pilihan pengguna (Pengaturan → Tema tampilan)
   // System tray persis Batam ChitChat: klik kanan -> Buka / Logout / Keluar.
   // "Keluar" dari tray langsung menutup aplikasi.
   await TrayService.init(
@@ -61,31 +63,52 @@ class ArsipApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Arsip Dokumen PU',
-      debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(), // lihat theme/ym_theme.dart
-      // F11 = keluar/masuk full screen di layar mana pun.
-      builder: (context, child) => CallbackShortcuts(
-        bindings: {
-          const SingleActivator(LogicalKeyboardKey.f11): toggleFullScreen,
-          // macOS: Ctrl + Cmd + F (standar Mac untuk layar penuh)
-          const SingleActivator(LogicalKeyboardKey.keyF, control: true, meta: true): toggleFullScreen,
-          // Ctrl+F / ⌘F di mana saja = pencarian (lihat services/find_shortcut.dart)
-          const SingleActivator(LogicalKeyboardKey.keyF, control: true): () => FindShortcut.run(appNavigatorKey.currentState),
-          const SingleActivator(LogicalKeyboardKey.keyF, meta: true): () => FindShortcut.run(appNavigatorKey.currentState),
+    // Dibangun ulang saat tema / setelan animasi diganti.
+    return ListenableBuilder(
+      listenable: ThemeCtl.instance,
+      builder: (context, _) => MaterialApp(
+        title: 'Arsip Dokumen PU',
+        debugShowCheckedModeBanner: false,
+        theme: buildAppTheme(), // lihat theme/ym_theme.dart
+        themeAnimationDuration: const Duration(milliseconds: 350),
+        builder: (context, child) {
+          final mq = MediaQuery.of(context);
+          return MediaQuery(
+            // "Kurangi animasi" dari Pengaturan aplikasi ATAU dari Windows/macOS
+            data: mq.copyWith(disableAnimations: mq.disableAnimations || ThemeCtl.instance.lessMotion),
+            child: CallbackShortcuts(
+              bindings: {
+                // F11 = keluar/masuk full screen di layar mana pun.
+                const SingleActivator(LogicalKeyboardKey.f11): toggleFullScreen,
+                // macOS: Ctrl + Cmd + F (standar Mac untuk layar penuh)
+                const SingleActivator(LogicalKeyboardKey.keyF, control: true, meta: true): toggleFullScreen,
+                // Ctrl+F / ⌘F di mana saja = pencarian (lihat services/find_shortcut.dart)
+                const SingleActivator(LogicalKeyboardKey.keyF, control: true): () => FindShortcut.run(appNavigatorKey.currentState),
+                const SingleActivator(LogicalKeyboardKey.keyF, meta: true): () => FindShortcut.run(appNavigatorKey.currentState),
+                // Ctrl+K / ⌘K = kolom cari di top bar (cari di seluruh arsip)
+                const SingleActivator(LogicalKeyboardKey.keyK, control: true): _focusGlobalSearch,
+                const SingleActivator(LogicalKeyboardKey.keyK, meta: true): _focusGlobalSearch,
+              },
+              child: Focus(
+                autofocus: true,
+                // Title bar: tampil di mode jendela; saat full screen tersembunyi
+                // (muncul bila mouse diarahkan ke tepi atas layar).
+                child: WindowFrame(child: child ?? const SizedBox()),
+              ),
+            ),
+          );
         },
-        child: Focus(
-          autofocus: true,
-          // Title bar: tampil di mode jendela; saat full screen tersembunyi
-          // (muncul bila mouse diarahkan ke tepi atas layar).
-          child: WindowFrame(child: child ?? const SizedBox()),
-        ),
+        navigatorKey: appNavigatorKey,
+        home: const RootGate(),
       ),
-      navigatorKey: appNavigatorKey,
-      home: const RootGate(),
     );
   }
+}
+
+void _focusGlobalSearch() {
+  if (AppState.instance.session == null) return;
+  appNavigatorKey.currentState?.popUntil((r) => r.isFirst);
+  WidgetsBinding.instance.addPostFrameCallback((_) => Nav.globalSearchFocus.requestFocus());
 }
 
 /// Menampilkan Login atau Shell sesuai ada/tidaknya sesi.
@@ -94,9 +117,13 @@ class RootGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // key = generasi tema: saat tema diganti, layar dibangun ulang dengan warna baru.
     return ListenableBuilder(
-      listenable: AppState.instance,
-      builder: (context, _) => AppState.instance.session == null ? const LoginScreen() : const ShellScreen(),
+      listenable: Listenable.merge([AppState.instance, ThemeCtl.instance]),
+      builder: (context, _) {
+        final g = ThemeCtl.instance.generation;
+        return AppState.instance.session == null ? LoginScreen(key: ValueKey('login$g')) : ShellScreen(key: ValueKey('shell$g'));
+      },
     );
   }
 }

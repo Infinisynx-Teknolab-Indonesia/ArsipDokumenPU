@@ -210,7 +210,7 @@ class _RequestsPageState extends State<RequestsPage> {
                 ],
               ),
               const SizedBox(height: 12),
-              if (_error != null) Text(_error!, style: const TextStyle(color: YmColors.buzzRed)),
+              if (_error != null) Text(_error!, style: TextStyle(color: YmColors.buzzRed)),
               Expanded(
                 child: _loading && _items == null
                     ? const Center(child: CircularProgressIndicator())
@@ -284,7 +284,7 @@ class _RequestCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: YmColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: r.status == 'pending' ? YmColors.statusAway.withOpacity(0.6) : YmColors.borderLavender),
       ),
@@ -303,7 +303,7 @@ class _RequestCard extends StatelessWidget {
                 child: InkWell(
                   onTap: onOpenDoc,
                   child: Text(r.documentTitle, maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: YmColors.accentBlue, decoration: TextDecoration.underline)),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: YmColors.accentBlue, decoration: TextDecoration.underline)),
                 ),
               ),
               Text('#${r.id} • ${r.requestedByName} • ${formatDateTime(r.requestedAt)}', style: YmTextStyles.label.copyWith(fontSize: 11.5)),
@@ -332,7 +332,7 @@ class _RequestCard extends StatelessWidget {
                     Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text(fieldLabel(k), style: YmTextStyles.username)),
                     Text(_fmt(k, r.old[k], old: true),
                         style: YmTextStyles.chatText.copyWith(fontSize: 12.5, color: YmColors.buzzRed, decoration: TextDecoration.lineThrough)),
-                    const Icon(Icons.arrow_forward_rounded, size: 15, color: YmColors.textMuted),
+                    Icon(Icons.arrow_forward_rounded, size: 15, color: YmColors.textMuted),
                     Text(_fmt(k, r.changes[k]), style: YmTextStyles.chatText.copyWith(fontSize: 12.5, color: YmColors.statusOnline, fontWeight: FontWeight.w700)),
                   ]),
               ],
@@ -370,7 +370,7 @@ class _RequestCard extends StatelessWidget {
                   OutlinedButton.icon(
                     style: outlineButtonStyle(),
                     onPressed: onReject,
-                    icon: const Icon(Icons.close_rounded, size: 17, color: YmColors.buzzRed),
+                    icon: Icon(Icons.close_rounded, size: 17, color: YmColors.buzzRed),
                     label: const Text('Tolak'),
                   ),
                   const SizedBox(width: 8),

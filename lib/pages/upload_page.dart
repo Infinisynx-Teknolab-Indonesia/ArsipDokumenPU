@@ -208,7 +208,7 @@ class _UploadPageState extends State<UploadPage> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.cloud_off_rounded, color: YmColors.statusAway),
+                  Icon(Icons.cloud_off_rounded, color: YmColors.statusAway),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -288,7 +288,7 @@ class _UploadPageState extends State<UploadPage> {
                               IconButton(
                                 tooltip: 'Hapus dari daftar',
                                 onPressed: _saving ? null : () => setState(() => _files.remove(f)),
-                                icon: const Icon(Icons.close_rounded, size: 18, color: YmColors.textMuted),
+                                icon: Icon(Icons.close_rounded, size: 18, color: YmColors.textMuted),
                               ),
                             ],
                           ),
@@ -389,7 +389,7 @@ class _DropZone extends StatelessWidget {
             children: [
               Icon(Icons.cloud_upload_outlined, size: 44, color: YmColors.accentPurple.withOpacity(0.8)),
               const SizedBox(height: 8),
-              const Text('Klik untuk memilih file', style: TextStyle(fontWeight: FontWeight.w700, color: YmColors.textDark)),
+              Text('Klik untuk memilih file', style: TextStyle(fontWeight: FontWeight.w700, color: YmColors.textDark)),
               const SizedBox(height: 3),
               Text('Bisa pilih banyak file sekaligus', style: YmTextStyles.label.copyWith(fontSize: 11.5)),
             ],
@@ -421,7 +421,7 @@ class _ReviewDialog extends StatelessWidget {
     final online = app.canUseServer;
     return AlertDialog(
       title: Row(children: [
-        const Icon(Icons.fact_check_rounded, color: YmColors.accentPurple),
+        Icon(Icons.fact_check_rounded, color: YmColors.accentPurple),
         const SizedBox(width: 10),
         Text('Periksa sebelum disimpan', style: YmTextStyles.username.copyWith(fontSize: 16)),
       ]),

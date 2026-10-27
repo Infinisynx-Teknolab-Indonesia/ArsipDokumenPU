@@ -9,7 +9,8 @@ import '../theme/ym_theme.dart';
 /// Warna sorotan hasil pencarian.
 const kMatchColor = Color(0xFFFFE066);
 const kActiveMatchColor = Color(0xFFFF9F1C);
-const kViewerBackground = Color(0xFFE9EAF4);
+/// Latar di belakang halaman dokumen (ikut tema: terang / gelap).
+Color get kViewerBackground => YmColors.isDark ? const Color(0xFF080B14) : YmColors.surfaceContainer;
 
 /// Membuat pola pencarian dari kata kunci.
 /// - Beberapa kata dipisah spasi = cari salah satunya.
@@ -99,15 +100,15 @@ class ViewerToolbar extends StatelessWidget {
           );
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: YmColors.surface,
           border: Border(bottom: BorderSide(color: YmColors.borderLavender)),
         ),
         child: wide
             ? row(leading, [if (search != null) search!, ...trailing])
             : Column(mainAxisSize: MainAxisSize.min, children: [
                 row(leading, trailing),
-                const Divider(height: 1, color: YmColors.borderLavender),
+                Divider(height: 1, color: YmColors.borderLavender),
                 row([search!], const []),
               ]),
       );
@@ -169,7 +170,7 @@ class ToolLabel extends StatelessWidget {
         constraints: BoxConstraints(minWidth: minWidth),
         child: Text(text,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: YmColors.textDark)),
+            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: YmColors.textDark)),
       );
 }
 
@@ -266,8 +267,8 @@ class _DocSearchBoxState extends State<DocSearchBox> {
             decoration: InputDecoration(
               isDense: true,
               hintText: 'Cari di dokumen (Ctrl+F)',
-              hintStyle: const TextStyle(fontSize: 12.5, color: YmColors.textMuted),
-              prefixIcon: const Icon(Icons.search_rounded, size: 18, color: YmColors.textMuted),
+              hintStyle: TextStyle(fontSize: 12.5, color: YmColors.textMuted),
+              prefixIcon: Icon(Icons.search_rounded, size: 18, color: YmColors.textMuted),
               prefixIconConstraints: const BoxConstraints(minWidth: 34),
               suffixIcon: has
                   ? InkWell(
@@ -276,16 +277,16 @@ class _DocSearchBoxState extends State<DocSearchBox> {
                         widget.onSearch('');
                         setState(() {});
                       },
-                      child: const Icon(Icons.close_rounded, size: 16, color: YmColors.textMuted),
+                      child: Icon(Icons.close_rounded, size: 16, color: YmColors.textMuted),
                     )
                   : null,
               suffixIconConstraints: const BoxConstraints(minWidth: 30),
               filled: true,
               fillColor: YmColors.panelBackground,
               contentPadding: const EdgeInsets.symmetric(vertical: 8),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: YmColors.borderLavender)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: YmColors.borderLavender)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: YmColors.accentPurple)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: YmColors.borderLavender)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: YmColors.borderLavender)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: YmColors.accentPurple)),
             ),
           ),
         ),

@@ -134,7 +134,7 @@ class _UsersPageState extends State<UsersPage> {
           ),
           const SizedBox(height: 14),
           if (_error != null)
-            Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(_error!, style: const TextStyle(color: YmColors.buzzRed))),
+            Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(_error!, style: TextStyle(color: YmColors.buzzRed))),
           Expanded(
             child: Panel(
               expand: true,
@@ -146,7 +146,7 @@ class _UsersPageState extends State<UsersPage> {
                   : online && _users != null
                       ? ListView.separated(
                           itemCount: _users!.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1, color: YmColors.borderLavender),
+                          separatorBuilder: (_, __) => Divider(height: 1, color: YmColors.borderLavender),
                           itemBuilder: (context, i) {
                             final u = _users![i];
                             final isMe = u.username.toLowerCase() == me;
@@ -159,8 +159,8 @@ class _UsersPageState extends State<UsersPage> {
                                 Text(u.fullName, style: YmTextStyles.username.copyWith(fontSize: 13)),
                                 const SizedBox(width: 8),
                                 _Tag(text: u.role == 'admin' ? 'ADMIN' : 'STAF', color: u.role == 'admin' ? YmColors.accentPurple : YmColors.accentBlue),
-                                if (!u.active) ...[const SizedBox(width: 6), const _Tag(text: 'NONAKTIF', color: YmColors.buzzRed)],
-                                if (isMe) ...[const SizedBox(width: 6), const _Tag(text: 'ANDA', color: YmColors.statusOnline)],
+                                if (!u.active) ...[const SizedBox(width: 6), _Tag(text: 'NONAKTIF', color: YmColors.buzzRed)],
+                                if (isMe) ...[const SizedBox(width: 6), _Tag(text: 'ANDA', color: YmColors.statusOnline)],
                               ]),
                               subtitle: Text(
                                 [
@@ -197,7 +197,7 @@ class _UsersPageState extends State<UsersPage> {
                                             danger: true);
                                         if (ok) await _act(() => app.withToken((a, t) => a.deleteUser(t, u.username)), 'Akun dihapus.');
                                       },
-                                      icon: const Icon(Icons.delete_outline_rounded, size: 19, color: YmColors.buzzRed),
+                                      icon: Icon(Icons.delete_outline_rounded, size: 19, color: YmColors.buzzRed),
                                     ),
                                 ],
                               ),
@@ -208,7 +208,7 @@ class _UsersPageState extends State<UsersPage> {
                           children: [
                             for (final u in app.users)
                               ListTile(
-                                leading: const Icon(Icons.person_rounded, color: YmColors.textMuted),
+                                leading: Icon(Icons.person_rounded, color: YmColors.textMuted),
                                 title: Text('${u.fullName} (@${u.username})', style: YmTextStyles.username),
                                 subtitle: Text('${u.role == 'admin' ? 'Admin' : 'Staf'} • ${u.active ? 'aktif' : 'nonaktif'} • '
                                     '${u.hash.isEmpty ? 'belum bisa login offline' : 'bisa login offline'}', style: YmTextStyles.label),
@@ -373,7 +373,7 @@ class _UserDialogState extends State<_UserDialog> {
               ),
               gap,
               TextField(controller: _pass2, obscureText: _obscure, decoration: fieldDecoration('Ulangi password', icon: Icons.lock_outline_rounded)),
-              if (_error != null) ...[gap, Text(_error!, style: const TextStyle(color: YmColors.buzzRed, fontSize: 12.5))],
+              if (_error != null) ...[gap, Text(_error!, style: TextStyle(color: YmColors.buzzRed, fontSize: 12.5))],
             ],
           ),
         ),

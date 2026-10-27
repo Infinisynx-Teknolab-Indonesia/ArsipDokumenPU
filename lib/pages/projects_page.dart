@@ -96,7 +96,7 @@ class _ProjectsPageState extends State<ProjectsPage> with PageSearchField<Projec
                       focusNode: searchFocus,
                       onChanged: (_) => setState(() {}),
                       decoration: fieldDecoration('Cari kode paket, nama, lokasi, kontraktor, PPK, nomor kontrak...', icon: Icons.search_rounded)
-                          .copyWith(fillColor: Colors.white),
+                          .copyWith(fillColor: YmColors.surface),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -244,7 +244,7 @@ class _ProjectCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: YmColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: YmColors.borderLavender),
       ),
@@ -276,7 +276,7 @@ class _ProjectCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(p.code, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: YmColors.accentPurple)),
+                    Text(p.code, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: YmColors.accentPurple)),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -288,10 +288,10 @@ class _ProjectCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(p.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: YmColors.textDark)),
+                Text(p.name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: YmColors.textDark)),
                 const SizedBox(height: 2),
                 Row(children: [
-                  const Icon(Icons.place_rounded, size: 14, color: YmColors.textMuted),
+                  Icon(Icons.place_rounded, size: 14, color: YmColors.textMuted),
                   const SizedBox(width: 4),
                   Expanded(child: Text(p.location.isEmpty ? '-' : p.location, style: YmTextStyles.label.copyWith(fontSize: 12))),
                 ]),
@@ -338,7 +338,7 @@ class _ProjectCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text('$docCount dokumen', textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: YmColors.accentPurple)),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: YmColors.accentPurple)),
                 Text(formatBytes(docSize), textAlign: TextAlign.center, style: YmTextStyles.label),
                 const SizedBox(height: 10),
                 ElevatedButton.icon(
@@ -362,7 +362,7 @@ class _ProjectCard extends StatelessWidget {
                       IconButton(
                         tooltip: 'Hapus proyek',
                         onPressed: canEdit ? onDelete : null,
-                        icon: const Icon(Icons.delete_outline_rounded, size: 18, color: YmColors.buzzRed),
+                        icon: Icon(Icons.delete_outline_rounded, size: 18, color: YmColors.buzzRed),
                       ),
                     ],
                   ),

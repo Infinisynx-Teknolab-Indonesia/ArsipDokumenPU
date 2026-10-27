@@ -16,15 +16,22 @@ Peta semua file di aplikasi desktop, apa fungsinya, dan **file mana yang diubah 
 | Aplikasi mulai full screen atau tidak, ukuran minimum jendela | `lib/main.dart` | `WindowOptions(...)`, `WindowCtl.enterFullScreen()` |
 | Menu klik kanan system tray (Buka / Logout / Keluar), ikon tray | `lib/services/tray_service.dart` | `Menu(items: [...])` |
 | Warna, font, animasi, tema Material | `lib/theme/ym_theme.dart` | `YmColors`, `YmTextStyles`, `buildAppTheme()`, `kMotion` |
+| **Tambah / ubah tema** (Indigo, Biru PU, Zamrud, Grafit, Konstruksi, Malam) | `lib/theme/ym_theme.dart` | `const appPalettes = [...]` (satu `AppPalette` = satu tema), `ThemeCtl` |
+| Kartu pilihan tema & kurangi animasi | `lib/pages/settings_page.dart` | `_ThemeCard`, `setLessMotion` |
+| Tombol pintasan Ctrl+K (kolom cari atas) | `lib/main.dart` | `_focusGlobalSearch` |
 | Tombol pintasan Ctrl+F (pencarian di mana saja) | `lib/services/find_shortcut.dart` + `lib/main.dart` | `FindShortcut.run()`, `PageSearchField` |
-| Daftar menu di sidebar kiri (urutan, nama, ikon, khusus admin) | `lib/screens/shell_screen.dart` | `const _nav = [...]` |
-| Header halaman (jam, status server, tombol tray) | `lib/screens/shell_screen.dart` | `class _Header` |
-| Kartu status sinkron di sidebar bawah | `lib/screens/shell_screen.dart` | `class _SyncCard` |
+| Daftar menu di sidebar kiri (urutan, nama, ikon, kelompok, khusus admin) | `lib/screens/shell_screen.dart` | `const _pages = [...]`, `_buildPage()` |
+| Top bar (logo, instansi, cari Ctrl K, status, + Tambah Dokumen, menu profil) | `lib/screens/shell_screen.dart` | `class _TopBar`, `_GlobalSearch`, `_AddButton`, `_AvatarMenu` |
+| Kategori & per tahun di sidebar, latar menu aktif yang meluncur | `lib/screens/shell_screen.dart` | `class _Sidebar` (`_highlight`, `_Collapse`) |
+| Judul halaman (breadcrumb, judul besar, keterangan, tombol aksi) | `lib/widgets/ui.dart` | `class PageHeader` |
+| Kartu "Tersimpan di server %" di sidebar bawah | `lib/screens/shell_screen.dart` | `class _SyncCard` |
 | Tampilan halaman login (judul, tulisan, kotak login) | `lib/screens/login_screen.dart` | `build()` |
-| Gambar latar login (langit, gedung, jembatan) | `lib/widgets/login_hero_background.dart` | `_SkylinePainter` |
+| Gambar latar login (jembatan gantung, grid cetak biru) | `lib/widgets/login_hero_background.dart` | `_BlueprintPainter` |
 | Akun default sebelum terhubung server (`administrator/administrator`) | `lib/services/app_state.dart` | `defaultAdminUser`, `defaultAdminPass` |
 | Login offline: kunci PC, salin akun admin & staf (juga di layar login) | `lib/services/app_state.dart` | `_ensureDeviceKey()`, `_syncUsers()`, `_offlineLogin()` |
-| Daftar PC terdaftar & tombol Cabut (admin) | `lib/pages/server_page.dart` | `_DevicesPanel` |
+| Persetujuan PC: Setujui / Tolak / Cabut (admin) | `lib/pages/admin_pages.dart` | `DevicesPage` |
+| Pengaturan email SMTP & tes email (admin) | `lib/pages/admin_pages.dart` | `EmailSettingsPage` |
+| Ringkasan server & aturan keamanan (admin) | `lib/pages/admin_pages.dart` | `AdminOverviewPage`, `SecurityPage` |
 | Seberapa sering cek server (10 detik), tarik data (2 menit), sinkron akun (5 menit) | `lib/services/app_state.dart` | `Timer.periodic(Duration(seconds: 10))`, `pullFromServer`, `_syncUsers` |
 | Kategori dokumen PU (Kontrak, RAB, Laporan, Foto, BA, dst.) | `lib/core/categories.dart` | `docCategories` |
 | Jenis proyek, status proyek, sumber dana | `lib/core/categories.dart` | `projectTypes`, `projectStatuses`, `fundingSources` |
@@ -32,11 +39,11 @@ Peta semua file di aplikasi desktop, apa fungsinya, dan **file mana yang diubah 
 | Format tanggal, Rupiah, ukuran file | `lib/core/format.dart` | `formatDateTime`, `formatRupiah`, `formatBytes` |
 | Isian form unggah/edit dokumen (judul, nomor, seri, tag...) | `lib/pages/doc_form.dart` | `DocMetaFields` |
 | Halaman Unggah Dokumen (area pilih file, tombol simpan) | `lib/pages/upload_page.dart` | `build()`, `_save()` |
-| Tabel Arsip/Dokumen Saya: kolom, filter, lebar kolom | `lib/pages/documents_page.dart` | `_colProject`, `_colCategory` ..., `FilterDropdown` |
+| Daftar Semua Dokumen / Dokumen Saya / Tersimpan di PC: kartu, filter, chip cepat, jumlah per halaman | `lib/pages/documents_page.dart` | `_DocCard`, `QuickChip`, `_pageSize`, `DocsMode` |
 | Bobot / aturan pencarian pintar | `lib/core/smart_search.dart` | `search()` → daftar `fields` (judul 10, nomor 8, ...) |
 | Aturan "satu seri" (Formula A/B/C) & dokumen terkait | `lib/core/smart_search.dart` | `baseTitle()`, `sameSeries()`, `related()` (bobot: seri 20, kode sama 5–8, satu proyek 5, tag 3) |
 | Angka yang TIDAK dianggap kode penghubung (001, 600, 100, tahun) | `lib/core/smart_search.dart` | `_weakNumber()`, `_isYear()` |
-| Isi popup detail dokumen (tab Info / Terkait / Riwayat Versi, tombol draf) | `lib/pages/doc_detail.dart` | `_DocDetailDialogState._build()` |
+| Halaman detail dokumen (Data dokumen / File asli, panel Detail nilai, Tindakan) | `lib/pages/doc_detail.dart` | `_dataView()`, `_fileView()`, `_evidencePanel()`, `_actionsPanel()` |
 | Dialog cetak (printer, salinan, halaman, Simpan PDF) | `lib/print/print_dialog.dart` | `_PrintDialog` |
 | Cara mencetak ke printer Windows / macOS | `lib/print/print_service.dart` (+ `win_printer.dart` untuk API Windows) | `printPdf()`, resolusi maks `2600` px |
 | Tampilan PDF hasil cetak Excel/teks/foto (ukuran huruf, margin, A4 mendatar) | `lib/print/pdf_builder.dart` | `pdfFromSheet()`, `pdfFromText()`, `pdfFromImageFile()` |
@@ -53,7 +60,7 @@ Peta semua file di aplikasi desktop, apa fungsinya, dan **file mana yang diubah 
 | Layar "Periksa sebelum disimpan" & tombol Simpan draf | `lib/pages/upload_page.dart` | `_ReviewDialog`, `_save(draft:)` |
 | Kirim draf / tahan jadi draf / ganti file sebelum terkirim | `lib/services/app_state.dart` | `submitDrafts()`, `holdAsDraft()`, `replaceUnsentFile()` |
 | Kotak "Ajukan Perubahan" untuk staf | `lib/pages/edit_request_dialog.dart` | `_EditRequestDialog` |
-| Kartu statistik di Dashboard | `lib/pages/dashboard_page.dart` | `StatCard(...)` |
+| Kartu statistik & isi Dashboard | `lib/pages/dashboard_page.dart` | `StatCard(...)`, `_CategoryPanel`, `_ActionPanel`, `_ActivityPanel`, `_ProjectsPanel` |
 | Teks panduan untuk staf/admin | `lib/pages/help_page.dart` | `sections` |
 | Kolom export Excel (CSV) | `lib/core/file_tools.dart` | `exportDocsCsv()`, `exportProjectsCsv()` |
 | Alamat endpoint API (kalau backend C# beda path) | `lib/services/api_client.dart` | `_u('/...')` di tiap fungsi |
@@ -85,7 +92,7 @@ ArsipDokumenPU_Desktop/
 │   ├── viewer/           PENAMPIL DOKUMEN di dalam aplikasi: PDF, Word, Excel/CSV, TXT, foto
 │   ├── print/            CETAK & simpan PDF (printer Windows/macOS langsung)
 │   ├── widgets/          komponen tampilan yang dipakai berulang
-│   └── theme/            warna & gaya teks
+│   └── theme/            tema (6 pilihan), warna, huruf, animasi
 ├── assets/icons/         ikon yang dibundel di dalam aplikasi (tray & jendela)
 ├── installer/            bahan installer: windows/ (Inno Setup + VC++ Runtime), macos/ (ikon, izin, AppDelegate)
 ├── test/                 tes otomatis kecil
@@ -139,7 +146,7 @@ ArsipDokumenPU_Desktop/
 | File | Fungsi |
 |---|---|
 | `login_screen.dart` | **Halaman login**: latar langit/jembatan, kotak login kaca, status server, petunjuk mode awal/offline, tombol tray & full screen & keluar di pojok kanan atas. |
-| `shell_screen.dart` | **Kerangka aplikasi setelah login**: **sidebar kiri** (logo, kartu user, daftar menu `_nav`, kartu sinkron, Logout, Keluar), **header** (judul halaman, instansi, status server, jam, tombol tray & full screen), banner peringatan, dan wadah semua halaman (`IndexedStack`, jadi isian form tidak hilang saat pindah menu). |
+| `shell_screen.dart` | **Kerangka aplikasi setelah login** (gaya versi web): **top bar** (logo, chip instansi, kolom cari Ctrl K, status online/offline berdenyut, *+ Tambah Dokumen*, menu foto profil: Profil, Pengaturan & tema, Panduan, Layar penuh, Tray, Logout, Keluar), **sidebar** (menu utama dengan jumlah, Kategori & Per tahun yang bisa dilipat, Kerja, **Admin Server**, kartu *Tersimpan di server %*, Pengaturan, Panduan) dengan **latar menu aktif yang meluncur**, dan wadah halaman (dibangun saat pertama dibuka lalu dipertahankan; berganti dengan animasi naik + pudar). |
 
 ---
 
@@ -147,7 +154,7 @@ ArsipDokumenPU_Desktop/
 
 | File | Menu / fungsi |
 |---|---|
-| `dashboard_page.dart` | **Dashboard**: sapaan, kartu statistik (total dokumen, proyek, nilai kontrak TA, antrian), grafik per kategori, proyek berjalan, dokumen terbaru. |
+| `dashboard_page.dart` | **Dashboard** (versi web *Archive Overview & Operations*): 4 kartu angka (total + grafik mingguan, isi file terbaca, perlu tindakan, tersimpan di PC), distribusi kategori & penyimpanan + ringkasan audit, unggah cepat, tindakan segera, aktivitas terbaru, proyek berjalan. |
 | `upload_page.dart` | **Unggah Dokumen**: isi data dokumen, pilih satu/banyak file, **Lihat isi** tiap file, **Periksa & Simpan** (`_ReviewDialog`) → kirim sekarang atau **simpan draf**, offline pun bisa, daftar "baru disimpan". |
 | `doc_form.dart` | **Form isian dokumen** yang dipakai bersama (proyek, kategori, tanggal, judul, nomor, **seri** dengan saran otomatis, tag, keterangan) + dialog **Edit Info** (admin / dokumen yang belum terupload). |
 | `documents_page.dart` | **Arsip Dokumen** dan **Dokumen Saya** (file yang sama, mode `mineOnly`): pencarian pintar, filter, urutan, tabel, alasan cocok, **relasi/seri di bawah hasil**, export CSV, tab ringkasan (Hari ini / **Draf** / Menunggu / Gagal / Tersimpan), pengingat draf + **Kirim semua** (`_DraftBanner`). |
@@ -158,9 +165,10 @@ ArsipDokumenPU_Desktop/
 | `terms_page.dart` | **Kamus Pencarian**: istilah ↔ kata/kode terkait (mis. pengeluaran = 544), uji kata kunci, baca ulang isi file (admin). |
 | `users_page.dart` | **Staf & Admin** (admin): tambah, edit, reset password, aktif/nonaktif, hapus akun. |
 | `audit_page.dart` | **Log Aktivitas** (admin): riwayat login, unggah, unduh, ubah, hapus beserta IP. |
-| `server_page.dart` | **Server API** (admin): isi alamat API, tes koneksi, hubungkan dengan akun admin server, ganti/putuskan server. |
+| `server_page.dart` | **Admin Server → Koneksi Server**: isi alamat API, tes koneksi, hubungkan dengan akun admin server, ganti/putuskan server. |
+| `admin_pages.dart` | **Admin Server** (dulu aplikasi terpisah `admin_app`): `AdminOverviewPage` (ringkasan server), `DevicesPage` (setujui/tolak/cabut/ganti nama PC), `EmailSettingsPage` (SMTP + tes), `SecurityPage` (wajib setujui PC baru). |
 | `profile_page.dart` | **Profil Saya**: info akun, statistik input, ganti password, Logout & Keluar. |
-| `settings_page.dart` | **Penyimpanan & Info**: lokasi database & ukuran file lokal, bersihkan cache unduhan, pintasan, versi aplikasi (`appVersion`). |
+| `settings_page.dart` | **Pengaturan**: **tema tampilan** (kartu pratinjau tiap tema), kurangi animasi, penyimpanan lokal & bersihkan cache, pintasan keyboard, tentang. |
 | `help_page.dart` | **Panduan** langkah-langkah untuk staf (dan bagian admin). |
 
 ---
@@ -201,18 +209,18 @@ Dipakai di: panel kiri **detail dokumen** (`pages/doc_detail.dart`), tombol **Bu
 | File | Fungsi |
 |---|---|
 | `app_title_bar.dart` | **Title bar atas** pengganti title bar Windows: seret untuk menggeser jendela, tombol **Full screen / Minimize / Maximize / Tutup ke tray**. Ubah di sini untuk tinggi bar, warna, tombol. |
-| `common.dart` | Komponen umum: `Panel` (kartu putih berjudul), `fieldDecoration` (gaya kotak isian), gaya tombol, `showSnack` (notifikasi bawah), `confirmDialog`, `NetStatusPill` (status server), `ArsipLogo`, `confirmExit` (dialog keluar: Batal / Kecilkan ke tray / Keluar), `toggleFullScreen`. |
-| `ui.dart` | Komponen halaman: `StatCard`, `CategoryBadge`, `DocStatusChip`, `FileTypeIcon` (ikon PDF/Word/Excel/foto), `EmptyState`, `PageBody` (padding halaman), `FilterDropdown`. |
+| `common.dart` | Komponen umum: `Panel` (kartu berjudul, bayangan halus), `fieldDecoration`, `searchDecoration` (kolom cari gaya web), gaya tombol (`primaryButtonStyle`, `outlineButtonStyle`, `softButtonStyle`), `showSnack`, `confirmDialog` (muncul dengan animasi), `NetStatusPill` + `PulseDot` (status berdenyut), `ArsipLogo`, `confirmExit`, `toggleFullScreen`. |
+| `ui.dart` | Komponen halaman: `PageHeader`, `StatCard`, `HoverCard` (terangkat saat disorot), `Reveal` (muncul berurutan), `CountUp` (angka menghitung naik), `Sparkline`, `ProgressBar`, `SegmentedToggle` (pilihan dengan penanda meluncur), `SoftChip`, `QuickChip`, `KbdHint`, `CategoryBadge`, `CategoryTile`, `DocStatusChip`, `FileTypeIcon`, `EmptyState`, `PageBody`, `FilterDropdown`, `timeAgo()`. |
 | `login_hero_background.dart` | Gambar latar login (langit, gedung, jembatan), digambar dengan kode tanpa file gambar. |
 
 ## assets/fonts/
 
-Plus Jakarta Sans (Regular, Italic, Medium, SemiBold, Bold, ExtraBold) + lisensi OFL. Didaftarkan di `pubspec.yaml` bagian `fonts`.
+**Inter** (Regular, Italic, Medium, SemiBold, Bold) untuk teks dan **Plus Jakarta Sans** (Regular–ExtraBold) untuk judul — sama seperti versi web — + lisensi OFL masing-masing. Didaftarkan di `pubspec.yaml` bagian `fonts`.
 
 ## lib/theme/
 | File | Fungsi |
 |---|---|
-| `ym_theme.dart` | Token desain "gambar kerja PU": **warna** (`YmColors`: ink, paper, line, puBlue, marka; nama lama seperti accentPurple tetap ada dan dipetakan ke warna baru), **gaya teks** (`YmTextStyles`, font Plus Jakarta Sans), **durasi animasi** (`kMotion`, `motion()` mengikuti setelan kurangi-animasi OS), `buildAppTheme()` untuk tombol, isian, dialog, tab, dan snackbar, serta transisi halaman geser+pudar. Ganti di sini, dan seluruh aplikasi ikut berubah. |
+| `ym_theme.dart` | **Tema**: `AppPalette` + daftar `appPalettes` (6 tema: Indigo = warna versi web, Biru PU, Zamrud, Grafit, Konstruksi, Malam/gelap), `ThemeCtl` (tema aktif & kurangi animasi, disimpan di PC), `YmColors` (semua warna mengikuti tema; nama lama seperti accentPurple tetap ada), `YmTextStyles` (Inter + Plus Jakarta Sans), durasi animasi (`kMotion`, `motion()`), bayangan kartu (`softShadow`, `hoverShadow`), `buildAppTheme()` dan transisi halaman geser + pudar. |
 
 ---
 

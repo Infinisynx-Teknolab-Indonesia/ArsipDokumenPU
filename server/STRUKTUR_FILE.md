@@ -82,7 +82,7 @@ Koneksi database (SQLAlchemy), **instalasi database otomatis**, dan **tabel-tabe
 | `search_terms` (`SearchTerm`) | kamus pencarian: istilah ↔ kata/kode terkait |
 | `audit_logs` (`AuditLog`) | log aktivitas: waktu, user, aksi, detail, IP |
 | `devices` (`Device`) | **PC terdaftar**: nama PC, hash kunci PC, didaftarkan oleh, terakhir sinkron, IP, aktif/dicabut, **status persetujuan** (pending/approved/rejected), disetujui oleh, OS, versi aplikasi, login terakhir |
-| `settings` (`Setting`) | **Pengaturan dari Admin Server** (key/value): SMTP email, persetujuan PC, batas lampiran, catatan kaki email |
+| `settings` (`Setting`) | **Pengaturan dari menu Admin Server** (key/value): SMTP email, persetujuan PC, batas lampiran, catatan kaki email |
 
 - `init_db()`: membuat tabel yang belum ada.
 - `_auto_migrate()`: **menambah kolom baru ke database lama** tanpa menghapus data (dipakai saat upgrade versi).
