@@ -16,6 +16,7 @@ Peta semua file di aplikasi desktop, apa fungsinya, dan **file mana yang diubah 
 | Aplikasi mulai full screen atau tidak, ukuran minimum jendela | `lib/main.dart` | `WindowOptions(...)`, `WindowCtl.enterFullScreen()` |
 | Menu klik kanan system tray (Buka / Logout / Keluar), ikon tray | `lib/services/tray_service.dart` | `Menu(items: [...])` |
 | Warna aplikasi (ungu, biru, merah, dll.) dan font | `lib/theme/ym_theme.dart` | `YmColors`, `YmTextStyles` |
+| Tombol pintasan Ctrl+F (pencarian di mana saja) | `lib/services/find_shortcut.dart` + `lib/main.dart` | `FindShortcut.run()`, `PageSearchField` |
 | Daftar menu di sidebar kiri (urutan, nama, ikon, khusus admin) | `lib/screens/shell_screen.dart` | `const _nav = [...]` |
 | Header halaman (jam, status server, tombol tray) | `lib/screens/shell_screen.dart` | `class _Header` |
 | Kartu status sinkron di sidebar bawah | `lib/screens/shell_screen.dart` | `class _SyncCard` |
@@ -123,6 +124,7 @@ ArsipDokumenPU_Desktop/
 | `api_client.dart` | **Komunikasi dengan server** (REST). Satu fungsi per endpoint: login, users, projects, documents (upload multipart, unduh), search-index, search-terms, edit-requests, versions, audit. Juga membedakan error: offline / 401 / ditolak. |
 | `tray_service.dart` | **System tray** (sama seperti Batam ChitChat): ikon di pojok kanan bawah, klik kiri = buka, klik kanan = **Buka / Logout / Keluar**, tombol X = sembunyikan ke tray, `quit()` = tutup total. |
 | `window_ctl.dart` | **Kontrol jendela**: masuk/keluar **full screen**, **pengawas jendela** (`init()` / `sync()`) yang menyamakan status full screen dengan kondisi nyata, jadi title bar selalu muncul lagi walau jendela dikecilkan lewat Windows (Win+↓, snap), mengembalikan ukuran jendela setelah keluar full screen, memastikan **tombol taskbar** tetap muncul, menampilkan jendela dari tray. |
+| `find_shortcut.dart` | **Ctrl+F / ⌘F di mana saja**: fokus ke kotak cari halaman yang sedang dibuka (Arsip, Dokumen Saya, Proyek, Kamus, Log); halaman tanpa kotak cari → pindah ke Arsip Dokumen. Halaman baru cukup memakai mixin `PageSearchField`. |
 | `nav.dart` | **Navigasi antar halaman** di dalam aplikasi (mis. dari Dashboard ke Arsip dengan filter proyek, dari Kamus ke Arsip dengan kata kunci, ke Dokumen Saya tab "Gagal"). |
 
 ---

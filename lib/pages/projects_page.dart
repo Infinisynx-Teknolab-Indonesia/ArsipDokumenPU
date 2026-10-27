@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/find_shortcut.dart';
 import 'package:flutter/services.dart';
 import '../core/categories.dart';
 import '../core/file_tools.dart';
@@ -17,8 +18,13 @@ class ProjectsPage extends StatefulWidget {
   State<ProjectsPage> createState() => _ProjectsPageState();
 }
 
-class _ProjectsPageState extends State<ProjectsPage> {
+class _ProjectsPageState extends State<ProjectsPage> with PageSearchField<ProjectsPage> {
   final _search = TextEditingController();
+
+  @override
+  String get searchPageId => 'projects';
+  @override
+  TextEditingController get searchController => _search;
   int _year = 0;
   String _status = '';
   String _type = '';
@@ -87,6 +93,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                   Expanded(
                     child: TextField(
                       controller: _search,
+                      focusNode: searchFocus,
                       onChanged: (_) => setState(() {}),
                       decoration: fieldDecoration('Cari kode paket, nama, lokasi, kontraktor, PPK, nomor kontrak...', icon: Icons.search_rounded)
                           .copyWith(fillColor: Colors.white),

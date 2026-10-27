@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/find_shortcut.dart';
 import '../core/models.dart';
 import '../theme/ym_theme.dart';
 import '../services/app_state.dart';
@@ -16,8 +17,13 @@ class TermsPage extends StatefulWidget {
   State<TermsPage> createState() => _TermsPageState();
 }
 
-class _TermsPageState extends State<TermsPage> {
+class _TermsPageState extends State<TermsPage> with PageSearchField<TermsPage> {
   final _test = TextEditingController();
+
+  @override
+  String get searchPageId => 'terms';
+  @override
+  TextEditingController get searchController => _test;
 
   @override
   void dispose() {
@@ -149,6 +155,7 @@ class _TermsPageState extends State<TermsPage> {
                     width: 360,
                     child: TextField(
                       controller: _test,
+                      focusNode: searchFocus,
                       onChanged: (_) => setState(() {}),
                       decoration: fieldDecoration('Coba kata kunci', icon: Icons.science_rounded, hint: 'mis. pengeluaran').copyWith(fillColor: Colors.white),
                     ),

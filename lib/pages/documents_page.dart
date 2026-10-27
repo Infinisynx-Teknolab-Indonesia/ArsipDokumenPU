@@ -8,6 +8,7 @@ import '../core/smart_search.dart';
 import '../theme/ym_theme.dart';
 import '../services/app_state.dart';
 import '../services/nav.dart';
+import '../services/find_shortcut.dart';
 import '../widgets/common.dart';
 import '../widgets/ui.dart';
 import 'doc_detail.dart';
@@ -23,8 +24,13 @@ class DocumentsPage extends StatefulWidget {
   State<DocumentsPage> createState() => _DocumentsPageState();
 }
 
-class _DocumentsPageState extends State<DocumentsPage> {
+class _DocumentsPageState extends State<DocumentsPage> with PageSearchField<DocumentsPage> {
   final _search = TextEditingController();
+
+  @override
+  String get searchPageId => widget.mineOnly ? 'mydocs' : 'docs';
+  @override
+  TextEditingController get searchController => _search;
   Timer? _debounce;
   String _query = ''; // kata kunci yang sudah "diendapkan" (debounce) -> hemat CPU untuk arsip besar
   String _project = ''; // '' = semua, '-' = tanpa proyek
@@ -241,6 +247,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                   Expanded(
                     child: TextField(
                       controller: _search,
+                      focusNode: searchFocus,
                       onChanged: (v) {
                         _debounce?.cancel();
                         _debounce = Timer(const Duration(milliseconds: 300), () {
@@ -249,7 +256,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                         setState(() {});
                       },
                       decoration: fieldDecoration(
-                        'Cari apa saja: judul, nomor, kode (mis. 544), isi PDF/Word/Excel, tag, proyek, pengunggah...',
+                        'Cari apa saja (Ctrl+F): judul, nomor, kode (mis. 544), isi PDF/Word/Excel, tag, proyek, pengunggah...',
                         icon: Icons.search_rounded,
                         suffix: _search.text.isEmpty
                             ? null

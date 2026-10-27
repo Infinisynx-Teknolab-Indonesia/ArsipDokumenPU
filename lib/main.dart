@@ -9,6 +9,7 @@ import 'widgets/app_title_bar.dart';
 import 'screens/login_screen.dart';
 import 'screens/shell_screen.dart';
 import 'widgets/common.dart';
+import 'services/find_shortcut.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -75,6 +76,9 @@ class ArsipApp extends StatelessWidget {
           const SingleActivator(LogicalKeyboardKey.f11): toggleFullScreen,
           // macOS: Ctrl + Cmd + F (standar Mac untuk layar penuh)
           const SingleActivator(LogicalKeyboardKey.keyF, control: true, meta: true): toggleFullScreen,
+          // Ctrl+F / ⌘F di mana saja = pencarian (lihat services/find_shortcut.dart)
+          const SingleActivator(LogicalKeyboardKey.keyF, control: true): () => FindShortcut.run(appNavigatorKey.currentState),
+          const SingleActivator(LogicalKeyboardKey.keyF, meta: true): () => FindShortcut.run(appNavigatorKey.currentState),
         },
         child: Focus(
           autofocus: true,

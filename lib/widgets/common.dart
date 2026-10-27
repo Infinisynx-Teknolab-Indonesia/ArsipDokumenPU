@@ -47,7 +47,13 @@ class Panel extends StatelessWidget {
                 ],
               ),
             ),
-          if (expand) Expanded(child: Padding(padding: padding, child: child)) else Padding(padding: padding, child: child),
+          // Material transparan: efek klik ListTile/InkWell tergambar DI ATAS
+          // latar putih panel (tanpa ini Flutter terus memberi peringatan
+          // "ListTile background color or ink splashes may be invisible").
+          if (expand)
+            Expanded(child: Material(type: MaterialType.transparency, child: Padding(padding: padding, child: child)))
+          else
+            Material(type: MaterialType.transparency, child: Padding(padding: padding, child: child)),
         ],
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/find_shortcut.dart';
 import '../core/format.dart';
 import '../core/models.dart';
 import '../theme/ym_theme.dart';
@@ -14,8 +15,13 @@ class AuditPage extends StatefulWidget {
   State<AuditPage> createState() => _AuditPageState();
 }
 
-class _AuditPageState extends State<AuditPage> {
+class _AuditPageState extends State<AuditPage> with PageSearchField<AuditPage> {
   final _search = TextEditingController();
+
+  @override
+  String get searchPageId => 'audit';
+  @override
+  TextEditingController get searchController => _search;
   List<AuditEntry>? _items;
   bool _loading = false;
   String? _error;
@@ -78,6 +84,7 @@ class _AuditPageState extends State<AuditPage> {
                   Expanded(
                     child: TextField(
                       controller: _search,
+                      focusNode: searchFocus,
                       onSubmitted: (_) => _load(),
                       decoration: fieldDecoration('Cari username, aksi, atau detail lalu tekan Enter', icon: Icons.search_rounded)
                           .copyWith(fillColor: Colors.white),
