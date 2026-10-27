@@ -60,7 +60,7 @@ class WindowCtl {
       final real = await _reallyFull();
       if (real != isFull.value) {
         isFull.value = real;
-        if (!real) await windowManager.setSkipTaskbar(false);
+        if (!real) await reactivate(); // keluar full screen lewat Windows -> tetap bisa diklik
       }
     } finally {
       _syncing = false;
@@ -96,11 +96,27 @@ class WindowCtl {
         await windowManager.setSize(defaultSize);
         await windowManager.center();
       }
-      await windowManager.setSkipTaskbar(false); // pastikan tombol taskbar muncul lagi
-      await windowManager.focus();
+      await reactivate();
     } catch (e) {
       debugPrint('[WindowCtl] exitFullScreen: $e');
     }
+  }
+
+  /// Setelah keluar full screen, window_manager di Windows mengembalikan ukuran
+  /// jendela TANPA mengaktifkannya (SWP_NOACTIVATE). Akibatnya jendela tampak
+  /// mengecil tapi tidak bisa diklik sampai ikon tray diklik. Di sini dilakukan
+  /// hal yang sama seperti klik ikon tray: tampilkan + fokus + taskbar, lalu
+  /// ukuran disentuh 1 px supaya Windows menggambar ulang & menyetel ulang area klik.
+  static Future<void> reactivate() async {
+    await windowManager.show();
+    await windowManager.setSkipTaskbar(false); // pastikan tombol taskbar muncul lagi
+    await windowManager.focus();
+    try {
+      final b = await windowManager.getBounds();
+      await windowManager.setBounds(Rect.fromLTWH(b.left, b.top, b.width + 1, b.height));
+      await windowManager.setBounds(b);
+    } catch (_) {}
+    await windowManager.focus();
   }
 
   static Future<void> toggleFullScreen() async {
