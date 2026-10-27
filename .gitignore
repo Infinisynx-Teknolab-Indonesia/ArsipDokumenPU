@@ -1,0 +1,16 @@
+build/
+.dart_tool/
+.idea/
+*.iml
+windows/flutter/ephemeral/
+macos/Flutter/ephemeral/
+**/Pods/
+installer/windows/output/
+installer/macos/output/
+dist/
+dmg/
+# server
+server/.env
+server/storage/
+__pycache__/
+*.pyc

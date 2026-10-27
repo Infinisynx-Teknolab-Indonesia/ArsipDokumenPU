@@ -1,0 +1,4 @@
+// Nama & identitas aplikasi macOS (disalin ke macos/Runner/Configs/AppInfo.xcconfig)
+PRODUCT_NAME = ArsipDokumenPU
+PRODUCT_BUNDLE_IDENTIFIER = id.go.pu.arsipDokumen
+PRODUCT_COPYRIGHT = Copyright © 2026 Dinas Pekerjaan Umum dan Penataan Ruang

@@ -1,0 +1,164 @@
+# Build installer Windows (.exe) dan macOS (.dmg) otomatis di GitHub —
+# tidak perlu Flutter, Visual Studio, Xcode, atau Inno Setup di komputer sendiri.
+#
+# Cara pakai:
+#   1. Upload folder proyek ini ke repo GitHub (boleh private).
+#   2. Tab Actions -> "Build Installer Windows & macOS" -> Run workflow.
+#   3. Setelah selesai (~15 menit) unduh dari bagian "Artifacts":
+#        ArsipDokumenPU_Windows  -> ArsipDokumenPU_Setup_<versi>.exe
+#        ArsipDokumenPU_macOS    -> ArsipDokumenPU_<versi>_macOS.dmg
+#   Push tag (mis. v1.0.1) -> kedua installer juga otomatis dilampirkan ke GitHub Release.
+#
+# Opsional macOS (agar tidak muncul peringatan "developer tidak dikenal"): isi
+# Settings -> Secrets -> Actions: MACOS_CERT_P12 (base64 sertifikat "Developer ID
+# Application"), MACOS_CERT_PASSWORD, MACOS_SIGN_IDENTITY, APPLE_ID,
+# APPLE_TEAM_ID, APPLE_APP_PASSWORD. Tanpa secrets, aplikasi tetap jadi (ditandatangani ad-hoc).
+name: Build Installer Windows & macOS
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Siapkan platform Windows
+        shell: pwsh
+        run: |
+          if (-not (Test-Path windows)) { flutter create --platforms=windows --project-name arsip_dokumen --org id.go.pu . }
+          Copy-Item installer/app_icon.ico windows/runner/resources/app_icon.ico -Force
+          $f = 'windows/runner/Runner.rc'
+          $t = Get-Content $f -Raw
+          $t = $t -replace '(VALUE "FileDescription", )"[^"]*"', '$1"Arsip Dokumen PU"' -replace '(VALUE "ProductName", )"[^"]*"', '$1"Arsip Dokumen PU"'
+          Set-Content $f $t -Encoding UTF8
+          if (-not (Test-Path installer/windows/vc_redist.x64.exe)) {
+            Invoke-WebRequest https://aka.ms/vs/17/release/vc_redist.x64.exe -OutFile installer/windows/vc_redist.x64.exe
+          }
+
+      - name: Build Flutter
+        run: |
+          flutter pub get
+          flutter build windows --release
+
+      - name: Pasang Inno Setup (bila belum ada)
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+
+      - name: Buat installer
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path pubspec.yaml -Pattern '^version:\s*([0-9.]+)').Matches[0].Groups[1].Value
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DMyAppVersion=$v" installer/windows/setup.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ArsipDokumenPU_Windows
+          path: installer/windows/output/*.exe
+
+  macos:
+    runs-on: macos-latest
+    env:
+      MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+      MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+      MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Siapkan platform macOS
+        run: |
+          if [ ! -d macos ]; then flutter create --platforms=macos --project-name arsip_dokumen --org id.go.pu .; fi
+          cp installer/macos/AppDelegate.swift macos/Runner/AppDelegate.swift
+          cp installer/macos/MainFlutterWindow.swift macos/Runner/MainFlutterWindow.swift
+          cp installer/macos/Release.entitlements macos/Runner/Release.entitlements
+          cp installer/macos/DebugProfile.entitlements macos/Runner/DebugProfile.entitlements
+          cp installer/macos/AppInfo.xcconfig macos/Runner/Configs/AppInfo.xcconfig
+          rm -rf macos/Runner/Assets.xcassets/AppIcon.appiconset
+          cp -R installer/macos/AppIcon.appiconset macos/Runner/Assets.xcassets/AppIcon.appiconset
+          # Nama yang tampil di menu bar, Dock, dan Finder
+          plutil -replace CFBundleName -string "Arsip Dokumen PU" macos/Runner/Info.plist
+          plutil -replace CFBundleDisplayName -string "Arsip Dokumen PU" macos/Runner/Info.plist
+          plutil -replace LSApplicationCategoryType -string "public.app-category.productivity" macos/Runner/Info.plist
+
+      - name: Build Flutter (Universal - Intel + Apple Silicon)
+        run: |
+          flutter pub get
+          flutter build macos --release
+
+      - name: Siapkan aplikasi
+        run: |
+          mkdir -p dist
+          cp -R build/macos/Build/Products/Release/ArsipDokumenPU.app "dist/Arsip Dokumen PU.app"
+          echo "VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')" >> $GITHUB_ENV
+
+      - name: Tanda tangan ad-hoc (tanpa sertifikat Apple)
+        if: env.MACOS_CERT_P12 == ''
+        run: codesign --force --deep --sign - "dist/Arsip Dokumen PU.app"
+
+      - name: Tanda tangan Developer ID (bila secrets diisi)
+        if: env.MACOS_CERT_P12 != ''
+        run: |
+          KC=build.keychain
+          security create-keychain -p "$RUNNER_TEMP" $KC
+          security default-keychain -s $KC
+          security unlock-keychain -p "$RUNNER_TEMP" $KC
+          echo "$MACOS_CERT_P12" | base64 --decode > cert.p12
+          security import cert.p12 -k $KC -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$RUNNER_TEMP" $KC
+          codesign --force --deep --options runtime --timestamp \
+            --entitlements installer/macos/Release.entitlements \
+            --sign "$MACOS_SIGN_IDENTITY" "dist/Arsip Dokumen PU.app"
+
+      - name: Buat DMG (seret ke Applications)
+        run: |
+          mkdir -p installer/macos/output dmg
+          cp -R "dist/Arsip Dokumen PU.app" dmg/
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname "Arsip Dokumen PU" -srcfolder dmg -ov -format UDZO \
+            "installer/macos/output/ArsipDokumenPU_${VERSION}_macOS.dmg"
+
+      - name: Notarisasi Apple (bila secrets diisi)
+        if: env.MACOS_CERT_P12 != '' && env.APPLE_ID != ''
+        run: |
+          DMG="installer/macos/output/ArsipDokumenPU_${VERSION}_macOS.dmg"
+          codesign --force --sign "$MACOS_SIGN_IDENTITY" --timestamp "$DMG"
+          xcrun notarytool submit "$DMG" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD" --wait
+          xcrun stapler staple "$DMG"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ArsipDokumenPU_macOS
+          path: installer/macos/output/*.dmg
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            out/ArsipDokumenPU_Windows/*.exe
+            out/ArsipDokumenPU_macOS/*.dmg

@@ -1,0 +1,10 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+sqlalchemy>=2.0
+pymysql>=1.1
+cryptography>=42      # dibutuhkan PyMySQL untuk login MySQL 8 (caching_sha2_password)
+python-multipart>=0.0.9
+pyjwt>=2.8
+pypdf>=4.0              # baca teks PDF untuk pencarian isi file
+openpyxl>=3.1           # baca teks Excel (.xlsx)
+python-dotenv>=1.0
