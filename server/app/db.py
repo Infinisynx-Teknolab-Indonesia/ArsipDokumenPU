@@ -250,7 +250,23 @@ class Device(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     last_seen: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     last_ip: Mapped[str] = mapped_column(String(64), default="")
-    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)  # False = dicabut admin
+    # Persetujuan admin: pending (baru) | approved (boleh dipakai) | rejected (ditolak)
+    status: Mapped[str] = mapped_column(String(16), default="pending", index=True)
+    approved_by: Mapped[str] = mapped_column(String(64), default="")
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    os: Mapped[str] = mapped_column(String(64), default="")
+    app_version: Mapped[str] = mapped_column(String(32), default="")
+    last_user: Mapped[str] = mapped_column(String(64), default="")
+
+
+class Setting(Base):
+    """Pengaturan server yang diubah lewat aplikasi Admin Server (SMTP email,
+    persetujuan PC, dll.) — key/value."""
+    __tablename__ = "settings"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str] = mapped_column(Text, default="")
 
 
 def init_db() -> None:
@@ -270,6 +286,15 @@ def _auto_migrate() -> None:
             "content_status": "VARCHAR(48) NOT NULL DEFAULT 'pending'",
             "indexed_at": "DATETIME NULL",
             "series": "VARCHAR(128) NOT NULL DEFAULT ''",
+        },
+        # PC yang sudah terdaftar sebelum ada fitur persetujuan -> dianggap disetujui
+        "devices": {
+            "status": "VARCHAR(16) NOT NULL DEFAULT 'approved'",
+            "approved_by": "VARCHAR(64) NOT NULL DEFAULT ''",
+            "approved_at": "DATETIME NULL",
+            "os": "VARCHAR(64) NOT NULL DEFAULT ''",
+            "app_version": "VARCHAR(32) NOT NULL DEFAULT ''",
+            "last_user": "VARCHAR(64) NOT NULL DEFAULT ''",
         },
     }
     with engine.begin() as conn:

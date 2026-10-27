@@ -1,0 +1,7 @@
+build/
+.dart_tool/
+windows/flutter/ephemeral/
+macos/Flutter/ephemeral/
+**/Pods/
+installer/windows/output/
+installer/macos/output/

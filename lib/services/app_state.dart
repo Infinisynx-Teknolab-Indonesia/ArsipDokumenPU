@@ -58,7 +58,12 @@ class AppState extends ChangeNotifier {
   DateTime? _lastUserSync;
   DateTime? _lastPull;
 
-  ApiClient? get api => settings.hasApi ? ApiClient(settings.apiUrl) : null;
+  ApiClient? get api => settings.hasApi ? ApiClient(settings.apiUrl, deviceKey: settings.deviceKey) : null;
+
+  /// Status persetujuan PC ini dari server: pending | approved | rejected | revoked | '' (belum tahu).
+  String deviceStatus = '';
+  String deviceMessage = '';
+  bool get deviceApproved => deviceStatus == 'approved';
   bool get setupMode => !settings.connected;
   bool get isOnline => net == NetStatus.online;
   bool get canUseServer => isOnline && !setupMode && session != null && !session!.isSetupAdmin;
@@ -215,6 +220,7 @@ class AppState extends ChangeNotifier {
     // PC lama (terhubung sebelum ada fitur kunci PC) ikut didaftarkan.
     final t = session?.token;
     if (t != null) await _ensureDeviceKey(t);
+    await refreshDeviceStatus();
     await _syncUsers(force: true);
     await pullFromServer(force: true);
     await tick();
@@ -393,9 +399,12 @@ class AppState extends ChangeNotifier {
       try {
         name = Platform.localHostname;
       } catch (_) {}
-      final (id, key) = await api!.registerDevice(token, name);
+      final (id, key, status) = await api!.registerDevice(token, name, os: Platform.operatingSystem, appVersion: appVersion);
       settings = settings.copyWith(deviceKey: key, deviceId: id);
+      deviceStatus = status;
+      deviceMessage = status == 'approved' ? '' : 'PC ini menunggu persetujuan admin server.';
       await _saveSettings();
+      notifyListeners();
     } catch (_) {
       // server lama tanpa endpoint /devices -> tetap jalan dengan sinkron saat login
     }
@@ -450,6 +459,31 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       }
     } catch (_) {}
+  }
+
+  /// Cek status persetujuan PC ini (ditampilkan di layar login).
+  Future<void> refreshDeviceStatus() async {
+    final client = api;
+    if (client == null || settings.deviceKey.isEmpty) return;
+    try {
+      final j = await client.deviceMe();
+      final st = (j['status'] ?? '').toString();
+      final msg = (j['message'] ?? '').toString();
+      if (st != deviceStatus || msg != deviceMessage) {
+        deviceStatus = st;
+        deviceMessage = msg;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  /// Kirim dokumen ke email (butuh online; dikirim oleh server lewat SMTP
+  /// yang diatur di aplikasi Admin Server).
+  Future<List<String>> emailDocument(DocRecord d,
+      {required List<String> to, List<String> cc = const [], String subject = '', String message = ''}) async {
+    final id = d.serverId;
+    if (id == null) throw Exception('Dokumen belum terupload ke server. Kirim email setelah dokumen tersimpan di server.');
+    return withToken((a, t) => a.emailDocument(t, id, to: to, cc: cc, subject: subject, message: message));
   }
 
   /// Daftar PC terdaftar (halaman Server API, khusus admin).
@@ -580,7 +614,10 @@ class AppState extends ChangeNotifier {
       notifyListeners();
       if (session == null || session!.isSetupAdmin) {
         // Di layar login pun daftar akun tetap diperbarui (pakai kunci PC).
-        if (session == null && settings.connected) await _syncUsers(force: wasOffline);
+        if (session == null && settings.connected) {
+          await refreshDeviceStatus();
+          await _syncUsers(force: wasOffline);
+        }
         return;
       }
       await _syncUsers();

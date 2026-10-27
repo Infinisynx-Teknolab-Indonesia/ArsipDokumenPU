@@ -76,12 +76,40 @@ Setiap PC didaftarkan sekali, lalu memakai kuncinya untuk menyalin daftar akun *
 
 | Method | Path | Akses | Keterangan |
 |---|---|---|---|
-| POST | `/devices` | semua user yang login | body `{"name":"NAMA-PC"}` → `{"device_id":1,"device_key":"<64 hex>"}`. Kunci hanya dikirim sekali; server menyimpan `sha256(kunci)` |
+| POST | `/devices` | semua user yang login | body `{"name":"NAMA-PC","os":"windows","app_version":"1.1.0"}` → `{"device_id":1,"device_key":"<64 hex>","status":"pending"}`. Kunci hanya dikirim sekali; server menyimpan `sha256(kunci)` |
+| GET | `/devices/me` | header `X-Device-Key` (tanpa token) | status PC ini: `{"id","name","status","approval_required","message",...}` — ditampilkan di layar login |
+| POST | `/devices/{id}/approve` · `/devices/{id}/reject` | admin | setujui / tolak PC |
+| PATCH | `/devices/{id}` | admin | `{"name":"Laptop Pak Budi"}` |
 | GET | `/devices/offline-users` | header `X-Device-Key: <kunci>` (**tanpa** token) | jawaban sama dengan `/auth/offline-users`. Kunci salah/dicabut → `401` (aplikasi lalu menghapus akun yang tersimpan di PC itu) |
 | GET | `/devices` | admin | `{"devices":[{"id","name","registered_by","created_at","last_seen","last_ip","active"}]}` |
 | DELETE | `/devices/{id}` | admin | cabut kunci PC (laptop hilang, PC tidak dipakai) |
 
-Tabel: `devices(id, name, key_hash UNIQUE, registered_by, created_at, last_seen, last_ip, active)`.
+Tabel: `devices(id, name, key_hash UNIQUE, registered_by, created_at, last_seen, last_ip, active, status, approved_by, approved_at, os, app_version, last_user)`.
+
+### Persetujuan PC (pengaturan `device_approval`, default AKTIF)
+- Aplikasi mengirim header **`X-Device-Key`** di SEMUA permintaan.
+- `POST /auth/login` untuk akun **staf**: ditolak `403` (pesan jelas) bila PC belum terdaftar, **menunggu**, ditolak, atau dicabut. Akun **admin** dikecualikan (untuk menghubungkan PC baru & aplikasi Admin Server).
+- `GET /auth/offline-users` dari PC yang belum disetujui hanya berisi akun peminta sendiri; `GET /devices/offline-users` menjawab `403` saat menunggu dan `401` saat ditolak/dicabut (aplikasi lalu menghapus akun yang tersimpan).
+- PC yang terdaftar sebelum fitur ini ada otomatis dianggap **disetujui**.
+
+## Admin Server (khusus admin — dipakai aplikasi `admin_app`)
+
+| Method | Path | Keterangan |
+|---|---|---|
+| GET | `/admin/overview` | ringkasan dashboard: member, PC per status, dokumen, proyek, permintaan edit, status email |
+| GET | `/admin/settings` | `{device_approval, smtp_host, smtp_port, smtp_security, smtp_user, smtp_password_set, smtp_from_email, smtp_from_name, email_max_mb, email_footer}` (password tidak pernah dikirim) |
+| PUT | `/admin/settings` | sebagian dari field di atas + `smtp_password` (kosong = tidak diubah). `smtp_security`: `starttls` / `ssl` / `none` |
+| POST | `/admin/email/test` | `{"to":"email@contoh.go.id"}` — kirim email percobaan |
+
+Tabel: `settings(key PRIMARY KEY, value)`.
+
+## Kirim dokumen ke email
+
+`POST /documents/{id}/email` (semua user yang login), body:
+```json
+{"to":["ppk@pu.go.id"],"cc":["arsip@pu.go.id"],"subject":"(opsional)","message":"(opsional)"}
+```
+Server melampirkan file asli, menambahkan data dokumen (judul, nomor, tanggal, proyek) di isi email, mengirim lewat SMTP dari `/admin/settings`, dan mencatat `document.email` di log. Jawaban `{"ok":true,"sent_to":[...]}`. Error: `400` (alamat salah / email belum diatur / file terlalu besar), `502` (server SMTP menolak).
 
 ## Users (admin)
 

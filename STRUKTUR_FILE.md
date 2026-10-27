@@ -37,6 +37,10 @@ Peta semua file di aplikasi desktop, apa fungsinya, dan **file mana yang diubah 
 | Aturan "satu seri" (Formula A/B/C) & dokumen terkait | `lib/core/smart_search.dart` | `baseTitle()`, `sameSeries()`, `related()` (bobot: seri 20, kode sama 5–8, satu proyek 5, tag 3) |
 | Angka yang TIDAK dianggap kode penghubung (001, 600, 100, tahun) | `lib/core/smart_search.dart` | `_weakNumber()`, `_isYear()` |
 | Isi popup detail dokumen (tab Info / Terkait / Riwayat Versi, tombol draf) | `lib/pages/doc_detail.dart` | `_DocDetailDialogState._build()` |
+| Dialog cetak (printer, salinan, halaman, Simpan PDF) | `lib/print/print_dialog.dart` | `_PrintDialog` |
+| Cara mencetak ke printer Windows / macOS | `lib/print/print_service.dart` (+ `win_printer.dart` untuk API Windows) | `printPdf()`, resolusi maks `2600` px |
+| Tampilan PDF hasil cetak Excel/teks/foto (ukuran huruf, margin, A4 mendatar) | `lib/print/pdf_builder.dart` | `pdfFromSheet()`, `pdfFromText()`, `pdfFromImageFile()` |
+| Isi dialog Kirim Email | `lib/pages/email_dialog.dart` | `_EmailDialog` |
 | Jenis file yang dibuka di dalam aplikasi | `lib/viewer/document_viewer.dart` | `canViewInApp()`, `DocumentViewer.build()` |
 | Tampilan halaman layar penuh penampil (header, tombol simpan/folder/aplikasi lain) | `lib/viewer/document_viewer.dart` | `DocumentViewerPage` |
 | Toolbar penampil, warna sorotan hasil cari, langkah zoom | `lib/viewer/viewer_common.dart` | `ViewerToolbar`, `kMatchColor`, `zoomSteps` |
@@ -79,6 +83,7 @@ ArsipDokumenPU_Desktop/
 │   ├── screens/          layar besar: Login dan kerangka utama (sidebar + header)
 │   ├── pages/            halaman-halaman menu (Dashboard, Unggah, Arsip, ...)
 │   ├── viewer/           PENAMPIL DOKUMEN di dalam aplikasi: PDF, Word, Excel/CSV, TXT, foto
+│   ├── print/            CETAK & simpan PDF (printer Windows/macOS langsung)
 │   ├── widgets/          komponen tampilan yang dipakai berulang
 │   └── theme/            warna & gaya teks
 ├── assets/icons/         ikon yang dibundel di dalam aplikasi (tray & jendela)
@@ -157,6 +162,19 @@ ArsipDokumenPU_Desktop/
 | `profile_page.dart` | **Profil Saya**: info akun, statistik input, ganti password, Logout & Keluar. |
 | `settings_page.dart` | **Penyimpanan & Info**: lokasi database & ukuran file lokal, bersihkan cache unduhan, pintasan, versi aplikasi (`appVersion`). |
 | `help_page.dart` | **Panduan** langkah-langkah untuk staf (dan bagian admin). |
+
+---
+
+## lib/print/ — cetak & simpan PDF (tanpa WPS / Office)
+
+| File | Fungsi |
+|---|---|
+| `print_dialog.dart` | **Dialog Cetak**: menyiapkan PDF dari penampil yang sedang terbuka, memilih printer, jumlah salinan, halaman tertentu, **Simpan PDF**. `PrintController` menghubungkan tombol Cetak dengan penampil. |
+| `print_service.dart` | Daftar printer & kirim ke printer. **Windows**: halaman PDF dirender PDFium (pdfrx) lalu dicetak lewat API Windows; halaman mendatar diputar otomatis. **macOS**: perintah `lp` (CUPS). |
+| `win_printer.dart` | Pemanggilan API printer Windows langsung (`winspool.drv`, `gdi32.dll`) memakai `dart:ffi`: EnumPrinters, CreateDC, StartDoc, StretchDIBits, dst. |
+| `pdf_builder.dart` | Membuat PDF dari halaman Word (gambar), tabel Excel/CSV, teks, dan foto memakai paket `pdf` (murni Dart). Memakai font Arial/Segoe dari sistem bila ada. |
+
+Catatan: paket `printing` sengaja **tidak** dipakai karena membawa `pdfium.dll` lain yang bentrok dengan pdfrx.
 
 ---
 

@@ -4,6 +4,10 @@ import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
+import '../print/pdf_builder.dart';
+import '../print/print_dialog.dart';
 import 'docx_parser.dart';
 import 'viewer_common.dart';
 
@@ -14,7 +18,10 @@ class DocxDocView extends StatefulWidget {
   final String initialQuery;
   final List<Widget> trailing;
   final List<Widget> errorActions;
-  const DocxDocView({super.key, required this.path, this.initialQuery = '', this.trailing = const [], this.errorActions = const []});
+
+  /// Diisi penampil: cara membuat PDF siap cetak (tombol Cetak).
+  final PrintController? printController;
+  const DocxDocView({super.key, required this.path, this.initialQuery = '', this.trailing = const [], this.errorActions = const [], this.printController});
 
   @override
   State<DocxDocView> createState() => _DocxDocViewState();
@@ -35,10 +42,13 @@ class _DocxDocViewState extends State<DocxDocView> {
   final _findFocus = FocusNode();
   final _searchKey = GlobalKey();
   double _lastFitZoom = 1;
+  final _pageKeys = <int, GlobalKey>{}; // halaman kertas -> untuk dicetak
+  int _pageTotal = 0;
 
   @override
   void initState() {
     super.initState();
+    widget.printController?.buildPdf = _buildPdf;
     _load();
   }
 
@@ -180,6 +190,34 @@ class _DocxDocViewState extends State<DocxDocView> {
     );
   }
 
+  /// Cetak: setiap halaman kertas difoto persis seperti tampilannya (tanpa
+  /// sorotan pencarian), lalu disusun menjadi PDF.
+  Future<String> _buildPdf() async {
+    if (_model == null) throw Exception('Dokumen Word belum selesai dimuat.');
+    final savedRe = _re;
+    if (savedRe != null) {
+      setState(() => _re = null);
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    final pages = <PageImage>[];
+    try {
+      for (var i = 0; i < _pageTotal; i++) {
+        final ro = _pageKeys[i]?.currentContext?.findRenderObject();
+        if (ro is! RenderRepaintBoundary) continue;
+        final img = await ro.toImage(pixelRatio: 2.2); // ~210 dpi
+        final data = await img.toByteData(format: ui.ImageByteFormat.png);
+        img.dispose();
+        if (data == null) continue;
+        pages.add(PageImage(data.buffer.asUint8List(), ro.size.width * 0.75, ro.size.height * 0.75));
+      }
+    } finally {
+      if (savedRe != null && mounted) setState(() => _re = savedRe);
+    }
+    if (pages.isEmpty) throw Exception('Halaman Word belum tampil di layar.');
+    final bytes = await pdfFromPageImages(pages);
+    return writeTempPdf(bytes, widget.path.split(RegExp(r'[\\/]')).last);
+  }
+
   int _pageCount(DocxModel m) => 1 + m.blocks.whereType<DocxPageBreak>().length;
 
   Widget _body(DocxModel? m) {
@@ -208,7 +246,9 @@ class _DocxDocViewState extends State<DocxDocView> {
     final sheets = <Widget>[];
     for (var i = 0; i < pages.length; i++) {
       if (i > 0) sheets.add(const SizedBox(height: 18));
-      sheets.add(Container(
+      sheets.add(RepaintBoundary(
+        key: _pageKeys.putIfAbsent(i, () => GlobalKey()),
+        child: Container(
         width: m.pageWidth,
         constraints: BoxConstraints(minHeight: m.pageHeight),
         padding: EdgeInsets.fromLTRB(m.marginLeft, m.marginTop, m.marginRight, m.marginBottom),
@@ -217,8 +257,10 @@ class _DocxDocViewState extends State<DocxDocView> {
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.18), blurRadius: 6, offset: const Offset(0, 2))],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: _blockList(pages[i], counter)),
+      ),
       ));
     }
+    _pageTotal = pages.length;
     final doc = Column(mainAxisSize: MainAxisSize.min, children: sheets);
 
     return Container(

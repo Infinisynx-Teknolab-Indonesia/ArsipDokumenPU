@@ -12,6 +12,8 @@ import '../widgets/ui.dart';
 import '../core/smart_search.dart';
 import 'doc_form.dart';
 import 'edit_request_dialog.dart';
+import 'email_dialog.dart';
+import '../print/print_dialog.dart';
 import '../viewer/document_viewer.dart';
 import '../viewer/viewer_common.dart';
 
@@ -31,6 +33,7 @@ class _DocDetailDialog extends StatefulWidget {
 
 class _DocDetailDialogState extends State<_DocDetailDialog> {
   bool _busy = false;
+  final _print = PrintController(); // dipakai tombol Cetak di panel kanan
 
   DocRecord get d => widget.doc;
   bool get _hasLocal => d.localPath.isNotEmpty && File(d.localPath).existsSync();
@@ -73,6 +76,7 @@ class _DocDetailDialogState extends State<_DocDetailDialog> {
       fileName: d.fileName,
       initialQuery: widget.highlight,
       subtitle: [if (d.docNumber.isNotEmpty) 'No. ${d.docNumber}', formatIsoDate(d.docDate)].join('  •  '),
+      doc: d,
     );
     if (mounted) setState(() {});
   }
@@ -264,6 +268,30 @@ class _DocDetailDialogState extends State<_DocDetailDialog> {
                           onPressed: _busy || (needServer && !app.canUseServer) ? null : _view,
                           icon: const Icon(Icons.chrome_reader_mode_rounded, size: 18),
                           label: Text(canViewInApp(d.extension) ? 'Buka dokumen (layar penuh)' : 'Buka dokumen'),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                style: outlineButtonStyle(),
+                                onPressed: _busy || needServer || !canViewInApp(d.extension)
+                                    ? null
+                                    : () => showPrintDialog(context, controller: _print, title: d.title, fileName: d.fileName),
+                                icon: const Icon(Icons.print_rounded, size: 17),
+                                label: const Text('Cetak'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                style: outlineButtonStyle(),
+                                onPressed: _busy || d.serverId == null || !app.canUseServer ? null : () => showEmailDialog(context, d),
+                                icon: const Icon(Icons.forward_to_inbox_rounded, size: 17),
+                                label: const Text('Kirim Email'),
+                              ),
+                            ),
+                          ],
                         ),
                         Align(
                           alignment: Alignment.centerLeft,
@@ -462,8 +490,9 @@ class _DocDetailDialogState extends State<_DocDetailDialog> {
       path: d.localPath,
       fileName: d.fileName,
       initialQuery: widget.highlight,
+      title: d.title,
+      printController: _print,
       trailing: [
-        const ToolDivider(),
         ToolButton(icon: Icons.open_in_full_rounded, tooltip: 'Layar penuh', onPressed: _busy ? null : _view),
       ],
       fallbackActions: externalFileActions(context, d.localPath, d.fileName),

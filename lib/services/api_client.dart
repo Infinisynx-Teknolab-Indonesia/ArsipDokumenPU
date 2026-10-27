@@ -41,7 +41,11 @@ class LoginResult {
 /// C# .NET cukup mengikuti kontrak itu, aplikasi tidak perlu diubah.
 class ApiClient {
   final String baseUrl;
-  ApiClient(String url) : baseUrl = normalizeUrl(url);
+
+  /// Kunci PC ini (dikirim di setiap permintaan sebagai X-Device-Key). Server
+  /// memakainya untuk menolak login staf di PC yang belum disetujui admin.
+  final String deviceKey;
+  ApiClient(String url, {this.deviceKey = ''}) : baseUrl = normalizeUrl(url);
 
   static const _shortTimeout = Duration(seconds: 6);
   static const _uploadTimeout = Duration(minutes: 10);
@@ -64,6 +68,7 @@ class ApiClient {
         if (json) 'Content-Type': 'application/json',
         'Accept': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
+        if (deviceKey.isNotEmpty) 'X-Device-Key': deviceKey,
       };
 
   Future<http.Response> _send(Future<http.Response> Function() call, {Duration? timeout}) async {
@@ -162,10 +167,30 @@ class ApiClient {
   // ----------------------------------------------------------------- kunci PC
 
   /// Daftarkan PC ini ke server -> (id, kunci). Kunci hanya dikirim sekali.
-  Future<(int, String)> registerDevice(String token, String name) async {
-    final res = await _send(() => http.post(_u('/devices'), headers: _headers(token), body: jsonEncode({'name': name})));
+  /// Daftarkan PC ini ke server -> (id, kunci, status). Kunci hanya dikirim sekali.
+  Future<(int, String, String)> registerDevice(String token, String name, {String os = '', String appVersion = ''}) async {
+    final res = await _send(() => http.post(_u('/devices'),
+        headers: _headers(token), body: jsonEncode({'name': name, 'os': os, 'app_version': appVersion})));
     final j = _decode(res) as Map;
-    return ((j['device_id'] as num).toInt(), j['device_key'].toString());
+    return ((j['device_id'] as num).toInt(), j['device_key'].toString(), (j['status'] ?? 'approved').toString());
+  }
+
+  /// Status PC ini (pending / approved / rejected / revoked) — tanpa login.
+  Future<Map<String, dynamic>> deviceMe() async {
+    final res = await _send(() => http.get(_u('/devices/me'), headers: _headers(null)));
+    return Map<String, dynamic>.from(_decode(res) as Map);
+  }
+
+  /// Kirim dokumen (file asli sebagai lampiran) ke email lewat server.
+  Future<List<String>> emailDocument(String token, String docId,
+      {required List<String> to, List<String> cc = const [], String subject = '', String message = ''}) async {
+    final res = await _send(
+      () => http.post(_u('/documents/$docId/email'),
+          headers: _headers(token), body: jsonEncode({'to': to, 'cc': cc, 'subject': subject, 'message': message})),
+      timeout: const Duration(seconds: 90),
+    );
+    final j = _decode(res) as Map;
+    return ((j['sent_to'] as List?) ?? const []).map((e) => e.toString()).toList();
   }
 
   /// Daftar akun (hash offline) memakai kunci PC — tanpa login.

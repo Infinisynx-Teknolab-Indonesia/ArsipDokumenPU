@@ -30,6 +30,10 @@ import threading
 from contextlib import asynccontextmanager
 import re
 import secrets
+import smtplib
+import ssl
+from email.message import EmailMessage
+from email.utils import formataddr, make_msgid
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Annotated
@@ -44,7 +48,7 @@ from sqlalchemy.orm import Session
 
 from . import config
 from .db import (
-    AuditLog, Device, Document, DocumentVersion, EditRequest, Project, SearchTerm, SessionLocal, User, init_db, utcnow,
+    AuditLog, Device, Document, Setting, DocumentVersion, EditRequest, Project, SearchTerm, SessionLocal, User, init_db, utcnow,
 )
 from .extract import build_tokens, extract_text, snippet
 from .security import create_token, decode_token, make_password_fields, verify_password
@@ -102,6 +106,61 @@ def client_ip(request: Request) -> str:
 
 def audit(db: Session, request: Request | None, username: str, action: str, detail: str = "") -> None:
     db.add(AuditLog(username=username, action=action, detail=detail[:1000], ip=client_ip(request) if request else ""))
+
+
+# --------------------------------------------------------------------------- pengaturan server (Admin Server)
+
+SETTING_DEFAULTS = {
+    "device_approval": "1",      # 1 = PC baru wajib disetujui admin sebelum staf bisa login
+    "smtp_host": "",
+    "smtp_port": "587",
+    "smtp_security": "starttls",  # starttls | ssl | none
+    "smtp_user": "",
+    "smtp_password": "",
+    "smtp_from_email": "",
+    "smtp_from_name": "Arsip Dokumen PU",
+    "email_max_mb": "20",
+    "email_footer": "",
+}
+
+
+def get_setting(db: Session, key: str) -> str:
+    row = db.get(Setting, key)
+    return row.value if row is not None else SETTING_DEFAULTS.get(key, "")
+
+
+def set_setting(db: Session, key: str, value: str) -> None:
+    row = db.get(Setting, key)
+    if row is None:
+        db.add(Setting(key=key, value=value))
+    else:
+        row.value = value
+
+
+def device_approval_on(db: Session) -> bool:
+    return get_setting(db, "device_approval") == "1"
+
+
+def _hash_key(key: str) -> str:
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
+def _find_device(db: Session, key: str | None) -> "Device | None":
+    if not key:
+        return None
+    return db.scalar(select(Device).where(Device.key_hash == _hash_key(key)))
+
+
+def _device_block_reason(dev: "Device | None") -> str | None:
+    """None = PC boleh dipakai; selain itu alasan penolakan untuk ditampilkan."""
+    if dev is None:
+        return ("PC ini belum terdaftar di server. Minta admin menghubungkan PC ini (login administrator → "
+                "menu Server API), lalu menyetujuinya di aplikasi Admin Server.")
+    if not dev.active or dev.status == "rejected":
+        return f"PC ini (#{dev.id} {dev.name}) DITOLAK / dicabut oleh admin. Hubungi admin server."
+    if dev.status != "approved":
+        return f"PC ini (#{dev.id} {dev.name}) MENUNGGU PERSETUJUAN admin server. Minta admin menyetujui di aplikasi Admin Server."
+    return None
 
 
 # --------------------------------------------------------------------------- auth
@@ -211,7 +270,7 @@ class LoginIn(BaseModel):
 
 
 @app.post("/api/auth/login")
-def login(body: LoginIn, request: Request, db: DB):
+def login(body: LoginIn, request: Request, db: DB, x_device_key: Annotated[str | None, Header()] = None):
     uname = body.username.strip().lower()
     user = db.scalar(select(User).where(User.username == uname))
     if user is None or not verify_password(body.password, user.pw_salt, user.pw_hash, user.pw_iter):
@@ -222,6 +281,19 @@ def login(body: LoginIn, request: Request, db: DB):
         audit(db, request, uname, "login_failed", "Akun nonaktif")
         db.commit()
         raise HTTPException(403, "Akun ini dinonaktifkan. Hubungi admin.")
+    # PC baru wajib disetujui admin. Akun admin dikecualikan (untuk menghubungkan
+    # PC baru & aplikasi Admin Server), staf ditolak sampai PC disetujui.
+    dev = _find_device(db, x_device_key)
+    if user.role != "admin" and device_approval_on(db):
+        reason = _device_block_reason(dev)
+        if reason:
+            audit(db, request, uname, "login_failed", reason[:200])
+            db.commit()
+            raise HTTPException(403, reason)
+    if dev is not None:
+        dev.last_user = user.username
+        dev.last_seen = utcnow()
+        dev.last_ip = client_ip(request)
     user.last_login = utcnow()
     audit(db, request, user.username, "login", "Login berhasil")
     db.commit()
@@ -250,17 +322,23 @@ def change_password(body: ChangePasswordIn, user: CurrentUser, request: Request,
 
 
 @app.get("/api/auth/offline-users")
-def offline_users(_: CurrentUser, db: DB):
+def offline_users(user: CurrentUser, db: DB, x_device_key: Annotated[str | None, Header()] = None):
     """Hash offline semua akun, untuk login di aplikasi saat internet mati.
     Akun nonaktif dikirim TANPA hash (supaya ikut terblokir di semua PC)."""
+    # PC yang belum disetujui tidak boleh menyimpan akun orang lain (login offline).
+    if device_approval_on(db) and _device_block_reason(_find_device(db, x_device_key)):
+        return _offline_users_payload(db, only=user.username)
     return _offline_users_payload(db)
 
 
 # --------------------------------------------------------------------------- devices (kunci PC)
 
 
-def _offline_users_payload(db: Session) -> dict:
-    users = db.scalars(select(User).order_by(User.username)).all()
+def _offline_users_payload(db: Session, only: str | None = None) -> dict:
+    stmt = select(User).order_by(User.username)
+    if only:
+        stmt = stmt.where(User.username == only)
+    users = db.scalars(stmt).all()
     out = []
     for u in users:
         item = {"username": u.username, "full_name": u.full_name, "role": u.role, "active": u.active}
@@ -272,32 +350,59 @@ def _offline_users_payload(db: Session) -> dict:
 
 class DeviceIn(BaseModel):
     name: str = ""
+    os: str = ""
+    app_version: str = ""
 
 
 @app.post("/api/devices")
 def register_device(body: DeviceIn, user: CurrentUser, db: DB, request: Request):
     """Daftarkan PC ini. Kunci hanya dikirim SEKALI; server menyimpan hash-nya."""
     key = secrets.token_hex(32)
+    approval = device_approval_on(db)
     dev = Device(
         name=(body.name or "PC").strip()[:128],
-        key_hash=hashlib.sha256(key.encode()).hexdigest(),
+        key_hash=_hash_key(key),
         registered_by=user.username,
         last_seen=utcnow(),
         last_ip=client_ip(request),
+        os=body.os.strip()[:64],
+        app_version=body.app_version.strip()[:32],
+        status="pending" if approval else "approved",
+        approved_by="" if approval else "(otomatis)",
+        approved_at=None if approval else utcnow(),
     )
     db.add(dev)
     db.flush()
-    audit(db, request, user.username, "device.register", f"PC terdaftar: {dev.name} (#{dev.id})")
+    audit(db, request, user.username, "device.register",
+          f"PC terdaftar: {dev.name} (#{dev.id}) — {'menunggu persetujuan' if approval else 'disetujui otomatis'}")
     db.commit()
-    return {"device_id": dev.id, "device_key": key}
+    return {"device_id": dev.id, "device_key": key, "status": dev.status}
+
+
+def device_json(d: Device) -> dict:
+    return {
+        "id": d.id, "name": d.name, "registered_by": d.registered_by, "created_at": iso(d.created_at),
+        "last_seen": iso(d.last_seen), "last_ip": d.last_ip, "active": d.active,
+        "status": d.status if d.active else "revoked", "approved_by": d.approved_by,
+        "approved_at": iso(d.approved_at), "os": d.os, "app_version": d.app_version, "last_user": d.last_user,
+    }
+
+
+@app.get("/api/devices/me")
+def device_me(db: DB, x_device_key: Annotated[str | None, Header()] = None):
+    """Status PC ini (tanpa login) — ditampilkan di layar login aplikasi."""
+    dev = _find_device(db, x_device_key)
+    if dev is None:
+        raise HTTPException(404, "PC tidak dikenal.")
+    return {**device_json(dev), "approval_required": device_approval_on(db), "message": _device_block_reason(dev) or ""}
 
 
 def _device(db: Session, key: str | None) -> Device:
     if not key:
         raise HTTPException(401, "Kunci PC tidak ada.")
     dev = db.scalar(select(Device).where(Device.key_hash == hashlib.sha256(key.encode()).hexdigest()))
-    if dev is None or not dev.active:
-        raise HTTPException(401, "Kunci PC tidak berlaku (dicabut admin atau tidak dikenal).")
+    if dev is None or not dev.active or dev.status == "rejected":
+        raise HTTPException(401, "Kunci PC tidak berlaku (ditolak/dicabut admin atau tidak dikenal).")
     return dev
 
 
@@ -309,17 +414,60 @@ def device_offline_users(db: DB, request: Request, x_device_key: Annotated[str |
     dev.last_seen = utcnow()
     dev.last_ip = client_ip(request)
     db.commit()
+    if device_approval_on(db) and dev.status != "approved":
+        # 403 (bukan 401): PC menunggu persetujuan, akun belum boleh disalin.
+        raise HTTPException(403, _device_block_reason(dev) or "PC belum disetujui.")
     return _offline_users_payload(db)
 
 
 @app.get("/api/devices")
-def list_devices(_: AdminUser, db: DB):
+def list_devices(_: AdminUser, db: DB, status: str = ""):
     rows = db.scalars(select(Device).order_by(Device.id.desc())).all()
-    return {"devices": [
-        {"id": d.id, "name": d.name, "registered_by": d.registered_by, "created_at": iso(d.created_at),
-         "last_seen": iso(d.last_seen), "last_ip": d.last_ip, "active": d.active}
-        for d in rows
-    ]}
+    items = [device_json(d) for d in rows]
+    if status:
+        items = [d for d in items if d["status"] == status]
+    return {"devices": items, "approval_required": device_approval_on(db)}
+
+
+def _get_device(db: Session, device_id: int) -> Device:
+    dev = db.get(Device, device_id)
+    if dev is None:
+        raise HTTPException(404, "PC tidak ditemukan.")
+    return dev
+
+
+@app.post("/api/devices/{device_id}/approve")
+def approve_device(device_id: int, admin: AdminUser, db: DB, request: Request):
+    dev = _get_device(db, device_id)
+    dev.status, dev.active = "approved", True
+    dev.approved_by, dev.approved_at = admin.username, utcnow()
+    audit(db, request, admin.username, "device.approve", f"PC disetujui: {dev.name} (#{dev.id})")
+    db.commit()
+    return device_json(dev)
+
+
+@app.post("/api/devices/{device_id}/reject")
+def reject_device(device_id: int, admin: AdminUser, db: DB, request: Request):
+    dev = _get_device(db, device_id)
+    dev.status = "rejected"
+    dev.approved_by, dev.approved_at = admin.username, utcnow()
+    audit(db, request, admin.username, "device.reject", f"PC ditolak: {dev.name} (#{dev.id})")
+    db.commit()
+    return device_json(dev)
+
+
+class DeviceRename(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+
+
+@app.patch("/api/devices/{device_id}")
+def rename_device(device_id: int, body: DeviceRename, admin: AdminUser, db: DB, request: Request):
+    dev = _get_device(db, device_id)
+    old = dev.name
+    dev.name = body.name.strip()
+    audit(db, request, admin.username, "device.rename", f"PC #{dev.id}: {old} → {dev.name}")
+    db.commit()
+    return device_json(dev)
 
 
 @app.delete("/api/devices/{device_id}")
@@ -878,6 +1026,212 @@ def audit_log(_: AdminUser, db: DB, q: str = "", limit: int = Query(500, ge=1, l
         stmt = stmt.where(or_(AuditLog.username.like(like), AuditLog.action.like(like), AuditLog.detail.like(like)))
     rows = db.scalars(stmt.order_by(AuditLog.id.desc()).limit(limit)).all()
     return {"items": [{"at": iso(r.at), "username": r.username, "action": r.action, "detail": r.detail, "ip": r.ip} for r in rows]}
+
+
+# =========================================================================== Admin Server: pengaturan & email
+
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+@app.get("/api/admin/settings")
+def admin_get_settings(_: AdminUser, db: DB):
+    out = {k: get_setting(db, k) for k in SETTING_DEFAULTS if k != "smtp_password"}
+    out["smtp_password_set"] = bool(get_setting(db, "smtp_password"))
+    out["device_approval"] = out["device_approval"] == "1"
+    out["smtp_port"] = int(out["smtp_port"] or 0)
+    out["email_max_mb"] = int(out["email_max_mb"] or 20)
+    return out
+
+
+class SettingsIn(BaseModel):
+    device_approval: bool | None = None
+    smtp_host: str | None = None
+    smtp_port: int | None = Field(None, ge=1, le=65535)
+    smtp_security: str | None = None
+    smtp_user: str | None = None
+    smtp_password: str | None = None  # kosong / tidak dikirim = tidak diubah
+    smtp_from_email: str | None = None
+    smtp_from_name: str | None = None
+    email_max_mb: int | None = Field(None, ge=1, le=100)
+    email_footer: str | None = None
+
+
+@app.put("/api/admin/settings")
+def admin_put_settings(body: SettingsIn, admin: AdminUser, db: DB, request: Request):
+    data = body.model_dump(exclude_none=True)
+    if "smtp_security" in data and data["smtp_security"] not in ("starttls", "ssl", "none"):
+        raise HTTPException(400, "Keamanan SMTP harus starttls, ssl, atau none.")
+    if data.get("smtp_from_email") and not EMAIL_RE.match(data["smtp_from_email"].strip()):
+        raise HTTPException(400, "Alamat email pengirim tidak valid.")
+    if data.get("smtp_password") == "":
+        data.pop("smtp_password")
+    for k, v in data.items():
+        set_setting(db, k, ("1" if v else "0") if isinstance(v, bool) else str(v).strip() if k != "smtp_password" else str(v))
+    changed = ", ".join(k for k in data if k != "smtp_password") + (", smtp_password" if "smtp_password" in data else "")
+    audit(db, request, admin.username, "settings.update", f"Pengaturan diubah: {changed}")
+    db.commit()
+    return admin_get_settings(admin, db)
+
+
+def _send_email(db: Session, to: list[str], cc: list[str], subject: str, text_body: str, html_body: str | None,
+                attachments: list[tuple[str, bytes, str]]) -> None:
+    host = get_setting(db, "smtp_host").strip()
+    if not host:
+        raise HTTPException(400, "Email belum diatur. Admin perlu mengisi pengaturan SMTP di aplikasi Admin Server.")
+    port = int(get_setting(db, "smtp_port") or 587)
+    security = get_setting(db, "smtp_security") or "starttls"
+    user = get_setting(db, "smtp_user").strip()
+    password = get_setting(db, "smtp_password")
+    from_email = get_setting(db, "smtp_from_email").strip() or user
+    from_name = get_setting(db, "smtp_from_name").strip() or "Arsip Dokumen PU"
+    if not from_email:
+        raise HTTPException(400, "Alamat email pengirim belum diatur di Admin Server.")
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = formataddr((from_name, from_email))
+    msg["To"] = ", ".join(to)
+    if cc:
+        msg["Cc"] = ", ".join(cc)
+    msg["Message-ID"] = make_msgid(domain=from_email.split("@")[-1])
+    msg.set_content(text_body)
+    if html_body:
+        msg.add_alternative(html_body, subtype="html")
+    for name, data, mime in attachments:
+        maintype, _, subtype = (mime or "application/octet-stream").partition("/")
+        msg.add_attachment(data, maintype=maintype, subtype=subtype or "octet-stream", filename=name)
+    try:
+        ctx = ssl.create_default_context()
+        if security == "ssl":
+            smtp = smtplib.SMTP_SSL(host, port, timeout=30, context=ctx)
+        else:
+            smtp = smtplib.SMTP(host, port, timeout=30)
+        with smtp:
+            smtp.ehlo()
+            if security == "starttls":
+                smtp.starttls(context=ctx)
+                smtp.ehlo()
+            if user:
+                smtp.login(user, password)
+            smtp.send_message(msg, from_addr=from_email, to_addrs=to + cc)
+    except smtplib.SMTPAuthenticationError:
+        raise HTTPException(502, "Login ke server email gagal: username/password SMTP salah (Gmail: pakai App Password).")
+    except (smtplib.SMTPException, OSError) as e:
+        raise HTTPException(502, f"Gagal mengirim email lewat {host}:{port} — {e}")
+
+
+class TestEmailIn(BaseModel):
+    to: str
+
+
+@app.post("/api/admin/email/test")
+def admin_test_email(body: TestEmailIn, admin: AdminUser, db: DB, request: Request):
+    to = body.to.strip()
+    if not EMAIL_RE.match(to):
+        raise HTTPException(400, "Alamat email tujuan tidak valid.")
+    agency = config.AGENCY_NAME
+    _send_email(db, [to], [], "Tes email — Arsip Dokumen PU",
+                f"Email percobaan dari server Arsip Dokumen PU ({agency}).\nPengaturan SMTP sudah benar.",
+                None, [])
+    audit(db, request, admin.username, "email.test", f"Tes email ke {to}")
+    db.commit()
+    return {"ok": True}
+
+
+class DocEmailIn(BaseModel):
+    to: list[str]
+    cc: list[str] = []
+    subject: str = ""
+    message: str = ""
+
+
+def _clean_emails(items: list[str], label: str) -> list[str]:
+    out = []
+    for raw in items:
+        for part in re.split(r"[,;\s]+", raw or ""):
+            p = part.strip()
+            if not p:
+                continue
+            if not EMAIL_RE.match(p):
+                raise HTTPException(400, f"Alamat email {label} tidak valid: {p}")
+            if p.lower() not in (x.lower() for x in out):
+                out.append(p)
+    return out
+
+
+_BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+
+
+def _tanggal_id(d: date | None) -> str:
+    return f"{d.day} {_BULAN[d.month - 1]} {d.year}" if d else "-"
+
+
+@app.post("/api/documents/{doc_id}/email")
+def email_document(doc_id: int, body: DocEmailIn, user: CurrentUser, db: DB, request: Request):
+    """Kirim dokumen (lampiran file asli) ke email. Dicatat di log aktivitas."""
+    d = _get_doc(db, doc_id)
+    to = _clean_emails(body.to, "tujuan")
+    cc = _clean_emails(body.cc, "CC")
+    if not to:
+        raise HTTPException(400, "Isi minimal satu alamat email tujuan.")
+    if len(to) + len(cc) > 20:
+        raise HTTPException(400, "Maksimal 20 alamat email sekali kirim.")
+    path = (config.STORAGE_DIR / d.stored_path).resolve()
+    if config.STORAGE_DIR not in path.parents or not path.exists():
+        raise HTTPException(404, "File fisik tidak ditemukan di server.")
+    max_mb = int(get_setting(db, "email_max_mb") or 20)
+    if path.stat().st_size > max_mb * 1024 * 1024:
+        raise HTTPException(400, f"File terlalu besar untuk email (maks {max_mb} MB). Kirim lewat aplikasi saja.")
+    project = db.get(Project, d.project_id) if d.project_id else None
+    subject = body.subject.strip() or f"[Arsip PU] {d.title}"
+    info = [
+        ("Judul", d.title), ("Nomor", d.doc_number or "-"), ("Tanggal", _tanggal_id(d.doc_date)),
+        ("Proyek", f"{project.code} — {project.name}" if project else "-"), ("File", d.file_name),
+    ]
+    footer = get_setting(db, "email_footer").strip()
+    sender = user.full_name or user.username
+    text_body = (body.message.strip() + "\n\n" if body.message.strip() else "") + "\n".join(f"{k}: {v}" for k, v in info) + \
+        f"\n\nDikirim oleh {sender} melalui aplikasi Arsip Dokumen PU ({config.AGENCY_NAME})." + (f"\n\n{footer}" if footer else "")
+    import html as _html
+    rows = "".join(f"<tr><td style='padding:4px 12px 4px 0;color:#666'>{_html.escape(k)}</td><td style='padding:4px 0'><b>{_html.escape(str(v))}</b></td></tr>" for k, v in info)
+    msg_html = _html.escape(body.message.strip()).replace("\n", "<br>")
+    html_body = (
+        f"<div style='font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#232849'>"
+        f"{f'<p>{msg_html}</p>' if msg_html else ''}"
+        f"<div style='border:1px solid #D8DAF0;border-radius:10px;padding:14px 16px;background:#F7F8FD'>"
+        f"<div style='font-weight:700;color:#5B4FE0;margin-bottom:8px'>📄 Dokumen terlampir</div><table>{rows}</table></div>"
+        f"<p style='color:#8A8DAE;font-size:12px'>Dikirim oleh {_html.escape(sender)} melalui aplikasi Arsip Dokumen PU "
+        f"({_html.escape(config.AGENCY_NAME)}).{('<br>' + _html.escape(footer)) if footer else ''}</p></div>"
+    )
+    _send_email(db, to, cc, subject, text_body, html_body, [(d.file_name, path.read_bytes(), d.mime or "application/octet-stream")])
+    audit(db, request, user.username, "document.email", f"#{d.id} {d.title} → {', '.join(to + cc)}")
+    db.commit()
+    return {"ok": True, "sent_to": to + cc}
+
+
+@app.get("/api/admin/overview")
+def admin_overview(_: AdminUser, db: DB):
+    """Ringkasan untuk dashboard aplikasi Admin Server."""
+    devices = db.scalars(select(Device)).all()
+    by_status: dict[str, int] = {}
+    for dv in devices:
+        st = dv.status if dv.active else "revoked"
+        by_status[st] = by_status.get(st, 0) + 1
+    users = db.scalars(select(User)).all()
+    return {
+        "users": len(users),
+        "users_active": sum(1 for u in users if u.active),
+        "admins": sum(1 for u in users if u.role == "admin"),
+        "documents": db.scalar(select(func.count()).select_from(Document)) or 0,
+        "total_bytes": int(db.scalar(select(func.coalesce(func.sum(Document.file_size), 0))) or 0),
+        "projects": db.scalar(select(func.count()).select_from(Project)) or 0,
+        "devices": by_status,
+        "pending_requests": db.scalar(select(func.count()).select_from(EditRequest).where(EditRequest.status == "pending")) or 0,
+        "device_approval": device_approval_on(db),
+        "email_configured": bool(get_setting(db, "smtp_host").strip()),
+        "server_version": config.APP_VERSION,
+        "agency": config.AGENCY_NAME,
+    }
 
 
 @app.get("/api/stats")

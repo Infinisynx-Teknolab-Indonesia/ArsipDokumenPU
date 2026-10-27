@@ -24,6 +24,9 @@ Peta semua file server, apa fungsinya, dan **file mana yang diubah kalau mau men
 | Kamus pencarian awal (mis. pengeluaran = 544) | `app/main.py` | `DEFAULT_TERMS` (hanya dipakai saat tabel kamus kosong; selanjutnya ubah lewat aplikasi) |
 | Tambah kolom di tabel | `app/db.py` | class tabel + `_auto_migrate()` → `wanted` (supaya database lama ikut bertambah kolom) |
 | Cara membaca isi PDF/Word/Excel, kata yang diabaikan | `app/extract.py` | `extract_text()`, `STOPWORDS`, `MAX_TOKENS_CHARS` |
+| Persetujuan PC: login staf ditolak di PC yang belum disetujui | `app/main.py` | `login()`, `_device_block_reason()`, `device_approval_on()` |
+| Isi & tampilan email dokumen | `app/main.py` | `email_document()`, `_send_email()` |
+| Pengaturan bawaan (port SMTP 587, persetujuan PC aktif, lampiran 20 MB) | `app/main.py` | `SETTING_DEFAULTS` |
 | Aturan siapa boleh apa (admin/staf) | `app/main.py` | `CurrentUser` (semua yang login) / `AdminUser` (khusus admin) di parameter endpoint |
 | Tambah/ubah endpoint API | `app/main.py` | `@app.get/post/...("/api/...")` (lalu catat di `API.md`) |
 | Alamat & port server (8000) | `.env` | `HOST`, `PORT` |
@@ -78,7 +81,8 @@ Koneksi database (SQLAlchemy), **instalasi database otomatis**, dan **tabel-tabe
 | `edit_requests` (`EditRequest`) | permintaan perubahan dari staf: usulan data, data lama, file usulan, alasan, status, peninjau, catatan |
 | `search_terms` (`SearchTerm`) | kamus pencarian: istilah ↔ kata/kode terkait |
 | `audit_logs` (`AuditLog`) | log aktivitas: waktu, user, aksi, detail, IP |
-| `devices` (`Device`) | **PC terdaftar**: nama PC, hash kunci PC, didaftarkan oleh, terakhir sinkron, IP, aktif/dicabut. Kunci dipakai aplikasi menyalin akun tiap 5 menit untuk login offline |
+| `devices` (`Device`) | **PC terdaftar**: nama PC, hash kunci PC, didaftarkan oleh, terakhir sinkron, IP, aktif/dicabut, **status persetujuan** (pending/approved/rejected), disetujui oleh, OS, versi aplikasi, login terakhir |
+| `settings` (`Setting`) | **Pengaturan dari Admin Server** (key/value): SMTP email, persetujuan PC, batas lampiran, catatan kaki email |
 
 - `init_db()`: membuat tabel yang belum ada.
 - `_auto_migrate()`: **menambah kolom baru ke database lama** tanpa menghapus data (dipakai saat upgrade versi).
@@ -112,7 +116,9 @@ Koneksi database (SQLAlchemy), **instalasi database otomatis**, dan **tabel-tabe
 | Health | `GET /health`, `GET /meta` | cek server hidup, info kategori & batas file |
 | Login | `POST /auth/login`, `GET /auth/me`, `POST /auth/change-password`, `GET /auth/offline-users` | login, profil, ganti password, daftar hash untuk login offline |
 | Akun | `GET/POST /users`, `PATCH/DELETE /users/{username}` | kelola staf/admin (khusus admin) |
-| Kunci PC | `POST /devices`, `GET /devices/offline-users` (header `X-Device-Key`), `GET /devices`, `DELETE /devices/{id}` | daftarkan PC, salin akun tanpa login (login offline), daftar PC & cabut kunci (admin) |
+| Kunci PC | `POST /devices`, `GET /devices/me`, `GET /devices/offline-users` (header `X-Device-Key`), `GET /devices`, `POST /devices/{id}/approve` · `/reject`, `PATCH`/`DELETE /devices/{id}` | daftarkan PC, status PC, salin akun tanpa login, persetujuan/tolak/cabut (admin) |
+| Admin Server | `GET /admin/overview`, `GET/PUT /admin/settings`, `POST /admin/email/test` | dashboard, pengaturan SMTP & keamanan, tes email |
+| Email | `POST /documents/{id}/email` | kirim dokumen (lampiran) ke email lewat SMTP |
 | Proyek | `GET/POST /projects`, `PUT/DELETE /projects/{id}` | kelola proyek (tambah/ubah/hapus khusus admin) |
 | Dokumen | `POST /documents` (upload), `GET /documents`, `GET/PATCH/DELETE /documents/{id}`, `GET /documents/{id}/file` | upload anti-duplikat, daftar, ubah (admin), unduh, hapus (admin) |
 | Pencarian | `GET /search`, `GET /search-index`, `GET/POST/PUT/DELETE /search-terms`, `POST /admin/reindex`, `GET /series` | pencarian isi file + kamus, token untuk offline, kamus, baca ulang isi file, daftar seri |

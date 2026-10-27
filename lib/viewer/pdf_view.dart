@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../theme/ym_theme.dart';
 import 'viewer_common.dart';
+import '../print/print_dialog.dart';
 
 /// Penampil PDF di dalam aplikasi (mesin PDFium, sama seperti Chrome).
 /// Fitur: gulir halaman, zoom (Ctrl + roda mouse / tombol), lompat halaman,
@@ -12,7 +13,10 @@ class PdfDocView extends StatefulWidget {
   final String initialQuery;
   final List<Widget> trailing;
   final List<Widget> errorActions;
-  const PdfDocView({super.key, required this.path, this.initialQuery = '', this.trailing = const [], this.errorActions = const []});
+
+  /// Diisi penampil: cara membuat PDF siap cetak (tombol Cetak).
+  final PrintController? printController;
+  const PdfDocView({super.key, required this.path, this.initialQuery = '', this.trailing = const [], this.errorActions = const [], this.printController});
 
   @override
   State<PdfDocView> createState() => _PdfDocViewState();
@@ -37,6 +41,7 @@ class _PdfDocViewState extends State<PdfDocView> {
     super.initState();
     _query = widget.initialQuery;
     _ctrl.addListener(_onViewChanged);
+    widget.printController?.buildPdf = () async => widget.path; // PDF asli langsung dicetak
   }
 
   @override

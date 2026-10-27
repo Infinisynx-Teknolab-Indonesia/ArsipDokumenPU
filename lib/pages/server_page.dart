@@ -73,7 +73,12 @@ class _ServerPageState extends State<ServerPage> {
     if (err != null) {
       showSnack(context, err, error: true);
     } else {
-      showSnack(context, 'Berhasil terhubung. Akun default administrator kini nonaktif — gunakan akun dari server.');
+      showSnack(
+        context,
+        AppState.instance.deviceStatus == 'pending'
+            ? 'Berhasil terhubung. PC ini MENUNGGU PERSETUJUAN di aplikasi Admin Server sebelum staf bisa login di sini.'
+            : 'Berhasil terhubung. Akun default administrator kini nonaktif — gunakan akun dari server.',
+      );
     }
   }
 
@@ -146,6 +151,12 @@ class _ServerPageState extends State<ServerPage> {
           _kv('Instansi', app.agencyName),
           _kv('Akun tersimpan untuk login offline', '${app.users.where((u) => u.active && u.hash.isNotEmpty).length} akun (admin & staf) • diperbarui ${formatDateTime(app.usersSyncedAt)}'),
           _kv('Kunci PC ini', app.settings.deviceKey.isEmpty ? 'Belum terdaftar (otomatis saat login online berikutnya)' : 'Terdaftar (#${app.settings.deviceId}) — akun disalin otomatis tiap 5 menit'),
+          _kv('Persetujuan PC ini', switch (app.deviceStatus) {
+                'approved' => 'DISETUJUI admin — staf bisa login',
+                'pending' => 'MENUNGGU persetujuan di aplikasi Admin Server (staf belum bisa login)',
+                'rejected' || 'revoked' => 'DITOLAK / DICABUT admin — staf tidak bisa login',
+                _ => '-',
+              }),
           _kv('Proyek di cache', '${app.projects.length}'),
           _kv('Sinkron data terakhir', formatDateTime(app.lastPullAt)),
           const SizedBox(height: 12),

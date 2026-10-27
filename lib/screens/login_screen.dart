@@ -157,6 +157,31 @@ class _LoginHint extends StatelessWidget {
   Widget build(BuildContext context) {
     final String text;
     final IconData icon;
+    // PC belum/tidak disetujui admin server -> tampilkan peringatan jelas
+    final st = app.deviceStatus;
+    if (!app.setupMode && (st == 'pending' || st == 'rejected' || st == 'revoked')) {
+      final pending = st == 'pending';
+      final color = pending ? const Color(0xFFFFC857) : const Color(0xFFFF8A8A);
+      return Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.6)),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(pending ? Icons.hourglass_top_rounded : Icons.block_rounded, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '${pending ? 'PC INI MENUNGGU PERSETUJUAN ADMIN' : 'PC INI DITOLAK / DICABUT ADMIN'} (PC #${app.settings.deviceId})\n'
+              '${pending ? 'Staf belum bisa login di PC ini. Minta admin menyetujui di aplikasi Admin Server → Perangkat (PC). Akun admin tetap bisa masuk.' : 'Staf tidak bisa login di PC ini. Hubungi admin server.'}',
+              style: TextStyle(fontSize: 11.5, height: 1.4, color: Colors.white.withOpacity(0.9)),
+            ),
+          ),
+        ]),
+      );
+    }
     if (app.setupMode) {
       icon = Icons.info_outline;
       text = 'Mode awal: belum terhubung ke server.\nMasuk dengan administrator / administrator, lalu atur alamat API.';

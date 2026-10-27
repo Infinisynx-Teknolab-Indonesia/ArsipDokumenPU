@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show compute;
+import '../print/pdf_builder.dart';
+import '../print/print_dialog.dart';
 import 'sheet_parser.dart';
 import 'viewer_common.dart';
 
@@ -10,7 +13,10 @@ class TextDocView extends StatefulWidget {
   final String initialQuery;
   final List<Widget> trailing;
   final List<Widget> errorActions;
-  const TextDocView({super.key, required this.path, this.initialQuery = '', this.trailing = const [], this.errorActions = const []});
+
+  /// Diisi penampil: cara membuat PDF siap cetak (tombol Cetak).
+  final PrintController? printController;
+  const TextDocView({super.key, required this.path, this.initialQuery = '', this.trailing = const [], this.errorActions = const [], this.printController});
 
   @override
   State<TextDocView> createState() => _TextDocViewState();
@@ -38,7 +44,16 @@ class _TextDocViewState extends State<TextDocView> {
   @override
   void initState() {
     super.initState();
+    widget.printController?.buildPdf = _buildPdf;
     _load();
+  }
+
+  Future<String> _buildPdf() async {
+    final ch = _chunks;
+    if (ch == null) throw Exception('File teks belum selesai dimuat.');
+    final title = widget.path.split(RegExp(r'[\\/]')).last;
+    final bytes = await compute(_textPdf, (ch.join('\n'), title));
+    return writeTempPdf(bytes, title);
   }
 
   @override
@@ -193,3 +208,5 @@ class _TextDocViewState extends State<TextDocView> {
     );
   }
 }
+
+Future<Uint8List> _textPdf((String, String) job) => pdfFromText(job.$1, job.$2, PdfFonts.load());

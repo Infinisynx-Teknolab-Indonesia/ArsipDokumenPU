@@ -3,9 +3,12 @@
 Aplikasi arsip dokumen proyek Pekerjaan Umum (jalan, jembatan, gedung, irigasi, drainase).
 Berjalan layar penuh dengan tampilan gaya Batam ChitChat. Bisa dipakai offline dan mengunggah otomatis saat internet kembali.
 
-Repo ini berisi **source aplikasi desktop + pembuat installer** (folder utama) dan **server API FastAPI + MySQL** di folder **[`server/`](server/README.md)**.
+Repo ini berisi tiga bagian:
+- **Aplikasi Arsip Dokumen** (folder utama), untuk staf & admin, beserta pembuat installer Windows/macOS.
+- **Server API** FastAPI + MySQL, di folder [`server/`](server/README.md).
+- **Aplikasi Admin Server**, untuk persetujuan PC, member, email SMTP, keamanan, dan log, di folder [`admin_app/`](admin_app/README.md).
 
-**Unduh installer jadi:** tab **Actions** → run terbaru *Build Installer Windows & macOS* → bagian **Artifacts** (atau halaman **Releases** untuk versi bertag).
+**Unduh installer jadi:** tab **Actions** → run terbaru *Build Installer Windows & macOS* → bagian **Artifacts**, atau halaman **Releases** untuk versi bertag.
 
 > 📁 Daftar lengkap semua file, fungsinya, dan file mana yang diubah untuk mengganti sesuatu ada di **[STRUKTUR_FILE.md](STRUKTUR_FILE.md)**.
 
@@ -166,6 +169,17 @@ PC tujuan **tidak perlu** Flutter, Python, ataupun MySQL. Cukup bisa menjangkau 
 - Setiap hasil menunjukkan alasan cocoknya, misalnya *isi file memuat "544"* atau *via kamus: belanja*.
 - **Seri dokumen**: dokumen yang sama dari tahun ke tahun (misalnya *Dokumen 1 Formula A* 2000 → *Formula B* 2002 → *Formula C* 2026) dikenali sebagai satu seri. Caranya lewat isian **Seri / Kelompok Dokumen**, atau otomatis kalau judulnya sama dan hanya berbeda huruf/versi (A/B/C, Rev.2, v3, Addendum, tahun). Mencari *Formula C* menampilkan C beserta **Seri: A (2000), B (2002)** tepat di bawah hasilnya, dan detail dokumen menampilkan linimasa seri dari yang paling lama.
 - **Tab "Terkait"** di detail dokumen menampilkan dokumen lain yang memuat kode/nomor yang sama (di data atau isi file), satu proyek, tag sama, atau judul mirip, **dikelompokkan per tahun** termasuk tahun-tahun lampau.
+
+### Cetak & kirim email
+- Tombol **Cetak** (atau **Ctrl+P / ⌘P**) ada di penampil dokumen, layar penuh, dan detail dokumen. Dialognya berisi pilihan **printer**, **jumlah salinan**, **halaman tertentu** (mis. `1-3, 5`), dan **Simpan PDF**.
+  - PDF dicetak langsung. **Word** dicetak persis seperti tampilannya, **Excel/CSV** sebagai tabel A4 mendatar, **teks dan foto** sebagai halaman A4.
+  - Windows memakai printer Windows langsung (tanpa WPS/Office). macOS memakai sistem cetak bawaan Mac.
+- Tombol **Kirim Email** mengirim dokumen yang sudah tersimpan di server ke satu atau beberapa alamat, dengan CC, subjek, dan pesan. File asli dikirim **oleh server** sebagai lampiran lewat email yang diatur admin di aplikasi **Admin Server**, dan tercatat di Log Aktivitas.
+
+### PC baru wajib disetujui admin
+- Aplikasi bisa dipasang di mana saja, tetapi **staf baru bisa login setelah PC itu disetujui** di aplikasi **Admin Server** (folder `admin_app/`). Admin tetap bisa login untuk menghubungkan PC.
+- Layar login menampilkan status PC: *menunggu persetujuan* atau *ditolak/dicabut*. Menu **Server API** juga menampilkan status persetujuan PC ini.
+- PC yang ditolak atau dicabut otomatis menghapus akun yang tersimpan, sehingga login offline juga tertutup.
 
 ### Penampil dokumen di dalam aplikasi (tanpa WPS / Office)
 

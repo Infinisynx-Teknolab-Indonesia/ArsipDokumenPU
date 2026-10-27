@@ -75,6 +75,11 @@ ipconfig
 ```
 Alamat untuk aplikasi: `http://<IPv4 PC server>:8000/api`
 
+## Email & persetujuan PC (diatur di aplikasi Admin Server)
+- **Email (SMTP)** untuk tombol *Kirim Email* diatur di aplikasi **Admin Server** (folder `admin_app`) → menu **Email (SMTP)**, lalu cek dengan **Kirim tes**. Untuk Gmail gunakan *App Password*. Pengaturan disimpan di tabel `settings`.
+- **PC baru wajib disetujui** (bawaan aktif): staf hanya bisa login di PC yang sudah disetujui di aplikasi Admin Server → **Perangkat (PC)**. PC yang sudah terdaftar sebelum versi ini otomatis dianggap disetujui.
+- Aplikasi Arsip Dokumen **versi lama** (sebelum 1.1.0) tidak mengirim kunci PC, sehingga staf yang memakainya akan ditolak. Pasang versi terbaru di semua PC.
+
 ## Lupa password admin / tidak bisa login
 Akun **administrator / administrator** hanya berlaku di aplikasi **sebelum** terhubung ke server. Setelah terhubung, login memakai akun di server. Admin bawaan server: **admin / Admin@12345**.
 

@@ -1,7 +1,7 @@
 name: arsip_dokumen
 description: Arsip Dokumen Proyek PU — arsip dokumen pembangunan jalan/jembatan/gedung, admin & staf, mode offline + upload otomatis.
 publish_to: "none"
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -19,6 +19,9 @@ dependencies:
   pdfrx: ">=2.1.0 <2.5.0"   # PDF (mesin PDFium seperti Chrome) — versi dipilih otomatis sesuai Flutter Anda
   archive: ">=3.6.1 <5.0.0" # membuka isi file .docx / .xlsx (format ZIP)
   xml: ^6.5.0               # membaca isi Word & Excel
+  # Print & simpan PDF (tanpa paket "printing" — itu membawa pdfium.dll lain yang bentrok dengan pdfrx):
+  pdf: ">=3.10.0 <4.0.0"    # membuat PDF dari Word/Excel/teks/foto untuk dicetak — murni Dart
+  ffi: ">=2.1.0 <3.0.0"     # memanggil API printer Windows (winspool/gdi32) langsung
 
 # Sama seperti Batam ChitChat: path_provider_android >=2.3 menarik package:jni
 # yang gagal dikompilasi saat build Windows. Aman walau tidak terpakai.

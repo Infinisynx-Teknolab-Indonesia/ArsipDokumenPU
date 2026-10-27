@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 import '../theme/ym_theme.dart';
+import '../print/pdf_builder.dart';
+import '../print/print_dialog.dart';
 import 'sheet_parser.dart';
 import 'viewer_common.dart';
 
@@ -14,7 +16,10 @@ class SheetDocView extends StatefulWidget {
   final String initialQuery;
   final List<Widget> trailing;
   final List<Widget> errorActions;
-  const SheetDocView({super.key, required this.path, this.csv = false, this.initialQuery = '', this.trailing = const [], this.errorActions = const []});
+
+  /// Diisi penampil: cara membuat PDF siap cetak (tombol Cetak).
+  final PrintController? printController;
+  const SheetDocView({super.key, required this.path, this.csv = false, this.initialQuery = '', this.trailing = const [], this.errorActions = const [], this.printController});
 
   @override
   State<SheetDocView> createState() => _SheetDocViewState();
@@ -41,6 +46,7 @@ class _SheetDocViewState extends State<SheetDocView> {
   void initState() {
     super.initState();
     _query = widget.initialQuery;
+    widget.printController?.buildPdf = _buildPdf;
     _load();
   }
 
@@ -65,6 +71,15 @@ class _SheetDocViewState extends State<SheetDocView> {
     } catch (e) {
       if (mounted) setState(() => _error = e);
     }
+  }
+
+  /// Cetak sheet yang sedang dibuka sebagai tabel PDF (A4 mendatar).
+  Future<String> _buildPdf() async {
+    final s = _cur;
+    if (s == null) throw Exception('Data belum selesai dimuat.');
+    final title = widget.path.split(RegExp(r'[\\/]')).last;
+    final bytes = await compute(_sheetPdf, (s, title));
+    return writeTempPdf(bytes, s.name == title ? title : '$title - ${s.name}');
   }
 
   SheetData? get _cur => _wb == null || _wb!.sheets.isEmpty ? null : _wb!.sheets[_sheet];
@@ -375,3 +390,6 @@ WorkbookData _parseSheet((Uint8List, String, bool) job) {
   final (bytes, name, csv) = job;
   return csv ? SheetParser.parseCsv(bytes, name) : SheetParser.parseXlsx(bytes);
 }
+
+/// Proses latar: tabel -> PDF (fungsi top-level, lihat _parseSheet).
+Future<Uint8List> _sheetPdf((SheetData, String) job) => pdfFromSheet(job.$1, job.$2, PdfFonts.load());

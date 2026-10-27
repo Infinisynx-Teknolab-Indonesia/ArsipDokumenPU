@@ -1,0 +1,4 @@
+// Nama & identitas aplikasi Admin Server macOS
+PRODUCT_NAME = ArsipAdminServer
+PRODUCT_BUNDLE_IDENTIFIER = id.go.pu.arsipAdminServer
+PRODUCT_COPYRIGHT = Copyright © 2026 Dinas Pekerjaan Umum dan Penataan Ruang

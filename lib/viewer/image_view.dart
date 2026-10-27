@@ -1,5 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show compute;
+import '../print/pdf_builder.dart';
+import '../print/print_dialog.dart';
 import 'viewer_common.dart';
 
 /// Penampil foto (JPG, PNG, BMP, GIF, WEBP): zoom dengan roda mouse /
@@ -8,7 +12,10 @@ class ImageDocView extends StatefulWidget {
   final String path;
   final List<Widget> trailing;
   final List<Widget> errorActions;
-  const ImageDocView({super.key, required this.path, this.trailing = const [], this.errorActions = const []});
+
+  /// Diisi penampil: cara membuat PDF siap cetak (tombol Cetak).
+  final PrintController? printController;
+  const ImageDocView({super.key, required this.path, this.trailing = const [], this.errorActions = const [], this.printController});
 
   @override
   State<ImageDocView> createState() => _ImageDocViewState();
@@ -24,6 +31,7 @@ class _ImageDocViewState extends State<ImageDocView> {
   @override
   void initState() {
     super.initState();
+    widget.printController?.buildPdf = _buildPdf;
     _t.addListener(() {
       final z = _t.value.getMaxScaleOnAxis();
       if ((z - _zoom).abs() > 0.005 && mounted) setState(() => _zoom = z);
@@ -59,6 +67,15 @@ class _ImageDocViewState extends State<ImageDocView> {
         .multiplied(Matrix4.diagonal3Values(f, f, 1))
         .multiplied(Matrix4.translationValues(-cx, -cy, 0))
         .multiplied(_t.value);
+  }
+
+  Future<String> _buildPdf() async {
+    final bytes = await File(widget.path).readAsBytes();
+    final size = _imgSize;
+    var landscape = size != null && size.width > size.height;
+    if (_turns.isOdd) landscape = !landscape;
+    final pdf = await compute(_imagePdf, (bytes, landscape));
+    return writeTempPdf(pdf, widget.path.split(RegExp(r'[\\/]')).last);
   }
 
   void _reset() => _t.value = Matrix4.identity();
@@ -114,3 +131,5 @@ class _ImageDocViewState extends State<ImageDocView> {
     );
   }
 }
+
+Future<Uint8List> _imagePdf((Uint8List, bool) job) => pdfFromImageFile(job.$1, landscape: job.$2);

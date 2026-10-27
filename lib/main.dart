@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pdfrx/pdfrx.dart' show pdfrxFlutterInitialize;
 import 'package:window_manager/window_manager.dart';
 import 'theme/ym_theme.dart';
 import 'services/app_state.dart';
@@ -15,6 +16,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
   WindowCtl.init(); // status full screen selalu sesuai kondisi jendela
+  // Mesin PDF (PDFium) siap dipakai juga untuk mencetak, walau penampil PDF belum dibuka.
+  // ignore: discarded_futures, unawaited_futures
+  pdfrxFlutterInitialize();
 
   const options = WindowOptions(
     size: Size(1366, 768),

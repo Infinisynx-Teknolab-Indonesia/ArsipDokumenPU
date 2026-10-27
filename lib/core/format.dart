@@ -21,6 +21,9 @@ String baseName(String path) {
   return parts.isEmpty ? path : parts.last;
 }
 
+/// Versi aplikasi (samakan dengan `version:` di pubspec.yaml). Dikirim ke server saat PC didaftarkan.
+const appVersion = '1.1.0';
+
 /// Ekstensi file yang boleh diunggah.
 const allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt', 'jpg', 'jpeg', 'png', 'bmp', 'gif', 'webp', 'dwg', 'zip', 'rar'];
 
