@@ -7,8 +7,7 @@
 #   3. Setelah selesai (~15 menit) unduh dari bagian "Artifacts":
 #        ArsipDokumenPU_Windows  -> ArsipDokumenPU_Setup_<versi>.exe       (aplikasi staf/admin)
 #        ArsipDokumenPU_macOS    -> ArsipDokumenPU_<versi>_macOS.dmg
-#        ArsipAdminServer_Windows -> ArsipAdminServer_Setup_<versi>.exe    (aplikasi Admin Server)
-#        ArsipAdminServer_macOS   -> ArsipAdminServer_<versi>_macOS.dmg
+#   Installer aplikasi Admin Server: workflow terpisah build-admin-server.yml (folder admin_app).
 #   Push tag (mis. v1.0.1) -> kedua installer juga otomatis dilampirkan ke GitHub Release.
 #
 # Opsional macOS (agar tidak muncul peringatan "developer tidak dikenal"): isi
@@ -149,105 +148,9 @@ jobs:
           name: ArsipDokumenPU_macOS
           path: installer/macos/output/*.dmg
 
-  admin-windows:
-    # hanya bila folder admin_app ikut (repo lengkap)
-    if: hashFiles('admin_app/pubspec.yaml') != ''
-    runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: admin_app
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - name: Siapkan platform Windows (Admin Server)
-        shell: pwsh
-        run: |
-          if (-not (Test-Path windows)) { flutter create --platforms=windows --project-name arsip_admin_server --org id.go.pu . }
-          Copy-Item installer/app_icon.ico windows/runner/resources/app_icon.ico -Force
-          $f = 'windows/runner/Runner.rc'
-          $t = Get-Content $f -Raw
-          $t = $t -replace '(VALUE "FileDescription", )"[^"]*"', '$1"Arsip PU Admin Server"' -replace '(VALUE "ProductName", )"[^"]*"', '$1"Arsip PU Admin Server"'
-          Set-Content $f $t -Encoding UTF8
-          $m = 'windows/runner/main.cpp'
-          (Get-Content $m -Raw) -replace 'L"arsip_admin_server"', 'L"Arsip PU Admin Server"' | Set-Content $m -Encoding UTF8
-          if (-not (Test-Path ../installer/windows/vc_redist.x64.exe)) {
-            Invoke-WebRequest https://aka.ms/vs/17/release/vc_redist.x64.exe -OutFile ../installer/windows/vc_redist.x64.exe
-          }
-
-      - name: Build Flutter
-        run: |
-          flutter pub get
-          flutter build windows --release
-
-      - name: Pasang Inno Setup (bila belum ada)
-        shell: pwsh
-        run: |
-          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
-
-      - name: Buat installer
-        shell: pwsh
-        run: |
-          $v = (Select-String -Path pubspec.yaml -Pattern '^version:\s*([0-9.]+)').Matches[0].Groups[1].Value
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DMyAppVersion=$v" installer/windows/setup.iss
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ArsipAdminServer_Windows
-          path: admin_app/installer/windows/output/*.exe
-
-  admin-macos:
-    # hanya bila folder admin_app ikut (repo lengkap)
-    if: hashFiles('admin_app/pubspec.yaml') != ''
-    runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: admin_app
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - name: Siapkan platform macOS (Admin Server)
-        run: |
-          if [ ! -d macos ]; then flutter create --platforms=macos --project-name arsip_admin_server --org id.go.pu .; fi
-          cp installer/macos/Release.entitlements macos/Runner/Release.entitlements
-          cp installer/macos/DebugProfile.entitlements macos/Runner/DebugProfile.entitlements
-          cp installer/macos/AppInfo.xcconfig macos/Runner/Configs/AppInfo.xcconfig
-          rm -rf macos/Runner/Assets.xcassets/AppIcon.appiconset
-          cp -R installer/macos/AppIcon.appiconset macos/Runner/Assets.xcassets/AppIcon.appiconset
-          plutil -replace CFBundleName -string "Arsip Admin Server" macos/Runner/Info.plist
-          plutil -replace CFBundleDisplayName -string "Arsip PU Admin Server" macos/Runner/Info.plist
-
-      - name: Build Flutter
-        run: |
-          flutter pub get
-          flutter build macos --release
-
-      - name: Buat DMG
-        run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')
-          mkdir -p dmg installer/macos/output
-          cp -R build/macos/Build/Products/Release/ArsipAdminServer.app "dmg/Arsip PU Admin Server.app"
-          codesign --force --deep --sign - "dmg/Arsip PU Admin Server.app"
-          ln -s /Applications dmg/Applications
-          hdiutil create -volname "Arsip PU Admin Server" -srcfolder dmg -ov -format UDZO "installer/macos/output/ArsipAdminServer_${VERSION}_macOS.dmg"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ArsipAdminServer_macOS
-          path: admin_app/installer/macos/output/*.dmg
-
   release:
-    if: ${{ always() && startsWith(github.ref, 'refs/tags/v') && needs.windows.result == 'success' && needs.macos.result == 'success' }}
-    needs: [windows, macos, admin-windows, admin-macos]
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -260,5 +163,3 @@ jobs:
           files: |
             out/ArsipDokumenPU_Windows/*.exe
             out/ArsipDokumenPU_macOS/*.dmg
-            out/ArsipAdminServer_Windows/*.exe
-            out/ArsipAdminServer_macOS/*.dmg
