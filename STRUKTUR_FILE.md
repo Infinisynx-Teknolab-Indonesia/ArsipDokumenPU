@@ -15,7 +15,7 @@ Peta semua file di aplikasi desktop, apa fungsinya, dan **file mana yang diubah 
 | Cara masuk/keluar full screen, ukuran jendela normal (1366×768) | `lib/services/window_ctl.dart` | `defaultSize`, `enterFullScreen()`, `exitFullScreen()` |
 | Aplikasi mulai full screen atau tidak, ukuran minimum jendela | `lib/main.dart` | `WindowOptions(...)`, `WindowCtl.enterFullScreen()` |
 | Menu klik kanan system tray (Buka / Logout / Keluar), ikon tray | `lib/services/tray_service.dart` | `Menu(items: [...])` |
-| Warna aplikasi (ungu, biru, merah, dll.) dan font | `lib/theme/ym_theme.dart` | `YmColors`, `YmTextStyles` |
+| Warna, font, animasi, tema Material | `lib/theme/ym_theme.dart` | `YmColors`, `YmTextStyles`, `buildAppTheme()`, `kMotion` |
 | Tombol pintasan Ctrl+F (pencarian di mana saja) | `lib/services/find_shortcut.dart` + `lib/main.dart` | `FindShortcut.run()`, `PageSearchField` |
 | Daftar menu di sidebar kiri (urutan, nama, ikon, khusus admin) | `lib/screens/shell_screen.dart` | `const _nav = [...]` |
 | Header halaman (jam, status server, tombol tray) | `lib/screens/shell_screen.dart` | `class _Header` |
@@ -205,10 +205,14 @@ Dipakai di: panel kiri **detail dokumen** (`pages/doc_detail.dart`), tombol **Bu
 | `ui.dart` | Komponen halaman: `StatCard`, `CategoryBadge`, `DocStatusChip`, `FileTypeIcon` (ikon PDF/Word/Excel/foto), `EmptyState`, `PageBody` (padding halaman), `FilterDropdown`. |
 | `login_hero_background.dart` | Gambar latar login (langit, gedung, jembatan), digambar dengan kode tanpa file gambar. |
 
+## assets/fonts/
+
+Plus Jakarta Sans (Regular, Italic, Medium, SemiBold, Bold, ExtraBold) + lisensi OFL. Didaftarkan di `pubspec.yaml` bagian `fonts`.
+
 ## lib/theme/
 | File | Fungsi |
 |---|---|
-| `ym_theme.dart` | **Warna** (`YmColors`: titleBarStart/End, accentPurple, statusOnline, buzzRed, dll.) dan **gaya teks** (`YmTextStyles`). Sama dengan Batam ChitChat. Ganti warna di sini, dan seluruh aplikasi ikut berubah. |
+| `ym_theme.dart` | Token desain "gambar kerja PU": **warna** (`YmColors`: ink, paper, line, puBlue, marka; nama lama seperti accentPurple tetap ada dan dipetakan ke warna baru), **gaya teks** (`YmTextStyles`, font Plus Jakarta Sans), **durasi animasi** (`kMotion`, `motion()` mengikuti setelan kurangi-animasi OS), `buildAppTheme()` untuk tombol, isian, dialog, tab, dan snackbar, serta transisi halaman geser+pudar. Ganti di sini, dan seluruh aplikasi ikut berubah. |
 
 ---
 

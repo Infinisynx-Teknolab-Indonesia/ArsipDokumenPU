@@ -4,7 +4,8 @@ import '../services/app_state.dart';
 import '../services/tray_service.dart';
 import '../services/window_ctl.dart';
 
-/// Panel putih berbingkai lavender — gaya kartu Batam ChitChat.
+/// Kartu konten: putih, garis tepi 1px, tanpa bayangan. Judul (opsional) di
+/// baris atas yang dipisah garis tipis — rapi & tenang.
 class Panel extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -20,12 +21,16 @@ class Panel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Material transparan: efek klik ListTile/InkWell tergambar DI ATAS
+    // latar putih panel (tanpa ini Flutter terus memberi peringatan
+    // "ListTile background color or ink splashes may be invisible").
+    final body = Material(type: MaterialType.transparency, child: Padding(padding: padding, child: child));
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: YmColors.contentBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: YmColors.borderLavender),
-        boxShadow: [BoxShadow(color: YmColors.accentBlue.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+        color: YmColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: YmColors.line),
       ),
       child: Column(
         mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
@@ -33,27 +38,18 @@ class Panel extends StatelessWidget {
         children: [
           if (title != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: const BoxDecoration(
-                color: YmColors.panelBackground,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                border: Border(bottom: BorderSide(color: YmColors.borderLavender)),
-              ),
+              constraints: const BoxConstraints(minHeight: 50),
+              padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: YmColors.line))),
               child: Row(
                 children: [
-                  if (icon != null) ...[Icon(icon, size: 16, color: YmColors.accentPurple), const SizedBox(width: 8)],
-                  Expanded(child: Text(title!, style: YmTextStyles.username.copyWith(fontSize: 13))),
+                  if (icon != null) ...[Icon(icon, size: 18, color: YmColors.puBlue), const SizedBox(width: 10)],
+                  Expanded(child: Text(title!, style: YmTextStyles.sectionTitle)),
                   if (trailing != null) trailing!,
                 ],
               ),
             ),
-          // Material transparan: efek klik ListTile/InkWell tergambar DI ATAS
-          // latar putih panel (tanpa ini Flutter terus memberi peringatan
-          // "ListTile background color or ink splashes may be invisible").
-          if (expand)
-            Expanded(child: Material(type: MaterialType.transparency, child: Padding(padding: padding, child: child)))
-          else
-            Material(type: MaterialType.transparency, child: Padding(padding: padding, child: child)),
+          if (expand) Expanded(child: body) else body,
         ],
       ),
     );
@@ -67,39 +63,55 @@ InputDecoration fieldDecoration(String label, {IconData? icon, String? hint, Wid
       prefixIcon: icon == null ? null : Icon(icon, size: 18, color: YmColors.textMuted),
       suffixIcon: suffix,
       filled: true,
-      fillColor: YmColors.panelBackground,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       labelStyle: const TextStyle(color: YmColors.textMuted, fontSize: 13),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: YmColors.borderLavender)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: YmColors.borderLavender)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: YmColors.accentPurple, width: 1.5)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: YmColors.line)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: YmColors.line)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: YmColors.puBlue, width: 1.6)),
     );
 
-ButtonStyle primaryButtonStyle({Color color = YmColors.accentPurple}) => ElevatedButton.styleFrom(
-      backgroundColor: color,
-      foregroundColor: Colors.white,
-      disabledBackgroundColor: YmColors.borderLavender,
-      disabledForegroundColor: YmColors.textMuted,
-      elevation: 0,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-    );
+/// Tombol utama: tinta biru tua (atau warna lain untuk aksi khusus, mis. merah = hapus).
+/// Warna lama "accentPurple" otomatis diterjemahkan ke tinta supaya semua tombol seragam.
+ButtonStyle primaryButtonStyle({Color color = YmColors.ink}) {
+  final c = color == YmColors.accentPurple ? YmColors.ink : color;
+  return ElevatedButton.styleFrom(
+    backgroundColor: c,
+    foregroundColor: Colors.white,
+    disabledBackgroundColor: YmColors.line,
+    disabledForegroundColor: YmColors.textMuted,
+    elevation: 0,
+    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    textStyle: const TextStyle(fontFamily: kFont, fontWeight: FontWeight.w600, fontSize: 13),
+  ).copyWith(
+    // sedikit lebih terang saat disorot mouse
+    overlayColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.hovered) ? Colors.white.withOpacity(0.08) : null),
+  );
+}
 
 ButtonStyle outlineButtonStyle() => OutlinedButton.styleFrom(
-      foregroundColor: YmColors.accentPurple,
-      side: const BorderSide(color: YmColors.borderLavender),
+      foregroundColor: YmColors.textDark,
+      backgroundColor: Colors.white,
+      side: const BorderSide(color: YmColors.line),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+      textStyle: const TextStyle(fontFamily: kFont, fontWeight: FontWeight.w600, fontSize: 13),
     );
 
 void showSnack(BuildContext context, String text, {bool error = false}) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text(text),
-    backgroundColor: error ? YmColors.buzzRed : YmColors.titleBarStart,
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.hideCurrentSnackBar();
+  messenger.showSnackBar(SnackBar(
+    content: Row(children: [
+      Icon(error ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded, color: error ? const Color(0xFFFFB4B4) : YmColors.marka, size: 20),
+      const SizedBox(width: 12),
+      Expanded(child: Text(text, style: const TextStyle(fontFamily: kFont, color: Colors.white, fontSize: 13, height: 1.4))),
+    ]),
+    backgroundColor: error ? const Color(0xFF8E2A2A) : YmColors.ink,
     behavior: SnackBarBehavior.floating,
-    width: 520,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    width: 540,
     duration: Duration(seconds: error ? 6 : 3),
   ));
 }
@@ -108,12 +120,12 @@ Future<bool> confirmDialog(BuildContext context, {required String title, require
   final r = await showDialog<bool>(
     context: context,
     builder: (c) => AlertDialog(
-      title: Text(title, style: YmTextStyles.username.copyWith(fontSize: 15)),
-      content: SizedBox(width: 420, child: Text(message, style: YmTextStyles.chatText.copyWith(fontSize: 13))),
+      title: Text(title),
+      content: SizedBox(width: 420, child: Text(message, style: YmTextStyles.chatText.copyWith(color: YmColors.textMuted))),
       actions: [
         TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Batal')),
         ElevatedButton(
-          style: primaryButtonStyle(color: danger ? YmColors.buzzRed : YmColors.accentPurple),
+          style: primaryButtonStyle(color: danger ? YmColors.buzzRed : YmColors.ink),
           onPressed: () => Navigator.pop(c, true),
           child: Text(ok),
         ),
@@ -137,20 +149,83 @@ class NetStatusPill extends StatelessWidget {
       NetStatus.checking => (YmColors.statusAway, 'Memeriksa server...', Icons.cloud_sync_rounded),
       NetStatus.notConfigured => (YmColors.statusOffline, 'Belum terhubung ke server', Icons.link_off_rounded),
     };
+    // titik status + teks, tanpa kotak berwarna yang ramai
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: onDark ? Colors.white.withOpacity(0.12) : color.withOpacity(0.12),
+        color: onDark ? Colors.white.withOpacity(0.08) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.6)),
+        border: Border.all(color: onDark ? Colors.white.withOpacity(0.14) : YmColors.line),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 6),
-          Text(text, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: onDark ? Colors.white : YmColors.textDark)),
+          _PulseDot(color: color, pulse: status == NetStatus.checking || status == NetStatus.online),
+          const SizedBox(width: 8),
+          Text(text, style: TextStyle(fontFamily: kFont, fontSize: 12, fontWeight: FontWeight.w600, color: onDark ? Colors.white : YmColors.textDark)),
         ],
+      ),
+    );
+  }
+}
+
+/// Titik status yang berdenyut pelan (menandakan koneksi hidup).
+class _PulseDot extends StatefulWidget {
+  final Color color;
+  final bool pulse;
+  const _PulseDot({required this.color, required this.pulse});
+
+  @override
+  State<_PulseDot> createState() => _PulseDotState();
+}
+
+class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(covariant _PulseDot old) {
+    super.didUpdateWidget(old);
+    _sync();
+  }
+
+  void _sync() {
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations == true;
+    if (widget.pulse && !reduce) {
+      if (!_c.isAnimating) _c.repeat();
+    } else {
+      _c.stop();
+      _c.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 14,
+      height: 14,
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (_, __) => Stack(alignment: Alignment.center, children: [
+          if (widget.pulse)
+            Container(
+              width: 6 + 8 * _c.value,
+              height: 6 + 8 * _c.value,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color.withOpacity(0.35 * (1 - _c.value))),
+            ),
+          Container(width: 7, height: 7, decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color)),
+        ]),
       ),
     );
   }
@@ -163,19 +238,21 @@ class ArsipLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Ubin tinta dengan kotak arsip putih + garis marka kuning di bawah
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [YmColors.accentPurple, YmColors.titleBarEnd],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(size * 0.28),
-        boxShadow: [BoxShadow(color: YmColors.accentPurple.withOpacity(0.45), blurRadius: size * 0.3, offset: Offset(0, size * 0.08))],
+        color: YmColors.puBlue,
+        borderRadius: BorderRadius.circular(size * 0.26),
       ),
-      child: Icon(Icons.inventory_2_rounded, color: Colors.white, size: size * 0.55),
+      child: Stack(alignment: Alignment.center, children: [
+        Icon(Icons.inventory_2_rounded, color: Colors.white, size: size * 0.52),
+        Positioned(
+          bottom: size * 0.13,
+          child: Container(width: size * 0.34, height: size * 0.06, decoration: BoxDecoration(color: YmColors.marka, borderRadius: BorderRadius.circular(size))),
+        ),
+      ]),
     );
   }
 }
@@ -187,7 +264,7 @@ Future<void> confirmExit(BuildContext context) async {
   final choice = await showDialog<String>(
     context: context,
     builder: (c) => AlertDialog(
-      title: Text('Keluar aplikasi?', style: YmTextStyles.username.copyWith(fontSize: 15)),
+      title: const Text('Keluar aplikasi?'),
       content: SizedBox(
         width: 440,
         child: Text(
@@ -198,7 +275,7 @@ Future<void> confirmExit(BuildContext context) async {
               'Aplikasi Arsip Dokumen PU akan ditutup.',
             if (tray) '\nPilih "Kecilkan ke tray" supaya aplikasi tetap berjalan di pojok kanan bawah taskbar dan antrian terus diunggah.',
           ].join('\n'),
-          style: YmTextStyles.chatText.copyWith(fontSize: 13),
+          style: YmTextStyles.chatText.copyWith(color: YmColors.textMuted),
         ),
       ),
       actions: [

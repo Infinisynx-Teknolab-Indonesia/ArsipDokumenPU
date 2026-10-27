@@ -64,16 +64,7 @@ class ArsipApp extends StatelessWidget {
     return MaterialApp(
       title: 'Arsip Dokumen PU',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: YmColors.accentPurple, primary: YmColors.accentPurple),
-        scaffoldBackgroundColor: YmColors.panelBackground,
-        fontFamily: 'Segoe UI',
-        dialogTheme: DialogThemeData(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-      ),
+      theme: buildAppTheme(), // lihat theme/ym_theme.dart
       // F11 = keluar/masuk full screen di layar mana pun.
       builder: (context, child) => CallbackShortcuts(
         bindings: {

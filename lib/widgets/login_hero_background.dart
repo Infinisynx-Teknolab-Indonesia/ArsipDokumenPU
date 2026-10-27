@@ -1,112 +1,185 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../theme/ym_theme.dart';
 
-/// Full-bleed background for the login screen: a deep navy-to-violet sky,
-/// a simple drawn city skyline with lit windows, a suspension bridge
-/// silhouette, and water with light reflections. Entirely original vector
-/// art (no stock photography), evoking Batam's coastal/bridge character.
-class LoginHeroBackground extends StatelessWidget {
+/// Latar layar login: "gambar kerja" jembatan gantung di atas grid cetak biru,
+/// garis putih tipis + marka jalan kuning. Gambar tergambar sendiri satu kali
+/// saat dibuka (animasi ±2 detik), lalu diam. Animasi dilewati bila pengguna
+/// mematikan animasi di sistem operasi.
+class LoginHeroBackground extends StatefulWidget {
   const LoginHeroBackground({super.key});
+
+  @override
+  State<LoginHeroBackground> createState() => _LoginHeroBackgroundState();
+}
+
+class _LoginHeroBackgroundState extends State<LoginHeroBackground> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 2200));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_c.status == AnimationStatus.dismissed) {
+      if (MediaQuery.maybeOf(context)?.disableAnimations == true) {
+        _c.value = 1;
+      } else {
+        _c.forward();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [YmColors.heroGradientTop, YmColors.heroGradientBottom],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+      color: YmColors.ink,
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (_, __) => CustomPaint(
+          painter: _BlueprintPainter(Curves.easeInOutCubic.transform(_c.value)),
+          size: Size.infinite,
         ),
       ),
-      child: CustomPaint(painter: _SkylinePainter(), size: Size.infinite),
     );
   }
 }
 
-class _SkylinePainter extends CustomPainter {
+class _BlueprintPainter extends CustomPainter {
+  final double t; // 0..1 kemajuan gambar
+  _BlueprintPainter(this.t);
+
+  /// Gambar sebagian path sesuai kemajuan [p] (0..1).
+  void _drawPartial(Canvas canvas, Path path, Paint paint, double p) {
+    if (p <= 0) return;
+    for (final m in path.computeMetrics()) {
+      canvas.drawPath(m.extractPath(0, m.length * p.clamp(0.0, 1.0).toDouble()), paint);
+    }
+  }
+
+  /// Kemajuan bagian tertentu dari keseluruhan animasi.
+  double _seg(double start, double end) => ((t - start) / (end - start)).clamp(0.0, 1.0).toDouble();
+
   @override
   void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final rnd = Random(7); // fixed seed so the skyline is stable, not re-randomized per frame
+    final w = size.width, h = size.height;
 
-    // Water band at the bottom
-    final waterTop = h * 0.72;
-    final waterPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [YmColors.heroGradientBottom.withOpacity(0.9), YmColors.heroGradientTop],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, waterTop, w, h - waterTop));
-    canvas.drawRect(Rect.fromLTWH(0, waterTop, w, h - waterTop), waterPaint);
+    // ---- grid cetak biru (halus) — langsung tampil, memudar masuk
+    final fine = Paint()
+      ..color = Colors.white.withOpacity(0.035 * _seg(0, 0.25))
+      ..strokeWidth = 1;
+    final major = Paint()
+      ..color = Colors.white.withOpacity(0.06 * _seg(0, 0.25))
+      ..strokeWidth = 1;
+    const step = 24.0;
+    var i = 0;
+    for (double x = 0; x <= w; x += step, i++) {
+      canvas.drawLine(Offset(x, 0), Offset(x, h), i % 5 == 0 ? major : fine);
+    }
+    i = 0;
+    for (double y = 0; y <= h; y += step, i++) {
+      canvas.drawLine(Offset(0, y), Offset(w, y), i % 5 == 0 ? major : fine);
+    }
 
-    // Distant building silhouettes
-    final buildingPaint = Paint()..color = Colors.black.withOpacity(0.28);
-    double x = -20;
-    while (x < w + 20) {
-      final bw = 30 + rnd.nextDouble() * 50;
-      final bh = 60 + rnd.nextDouble() * 140;
-      final rect = Rect.fromLTWH(x, waterTop - bh, bw, bh);
-      canvas.drawRect(rect, buildingPaint);
+    // ---- jembatan gantung (tampak samping)
+    final deckY = h * 0.66;
+    final pylonTop = h * 0.30;
+    final p1 = w * 0.22, p2 = w * 0.70;
+    final line = Paint()
+      ..color = Colors.white.withOpacity(0.78)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6
+      ..strokeCap = StrokeCap.round;
+    final thin = Paint()
+      ..color = Colors.white.withOpacity(0.30)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
 
-      // A few lit windows per building
-      final windowPaint = Paint()..color = const Color(0xFFFFD873).withOpacity(0.7);
-      for (int i = 0; i < 6; i++) {
-        final wx = rect.left + 6 + rnd.nextDouble() * (bw - 14);
-        final wy = rect.top + 8 + rnd.nextDouble() * (bh - 16);
-        if (rnd.nextBool()) {
-          canvas.drawRect(Rect.fromLTWH(wx, wy, 3, 5), windowPaint);
-        }
+    // lantai jembatan (dua garis)
+    final deck = Path()
+      ..moveTo(-10, deckY)
+      ..lineTo(w + 10, deckY)
+      ..moveTo(-10, deckY + 10)
+      ..lineTo(w + 10, deckY + 10);
+    _drawPartial(canvas, deck, line, _seg(0.05, 0.40));
+
+    // pilon (menara) — bentuk huruf A ramping
+    Path pylon(double x) => Path()
+      ..moveTo(x - 10, deckY + 70)
+      ..lineTo(x - 4, pylonTop)
+      ..lineTo(x + 4, pylonTop)
+      ..lineTo(x + 10, deckY + 70)
+      ..moveTo(x - 7, pylonTop + (deckY - pylonTop) * 0.35)
+      ..lineTo(x + 7, pylonTop + (deckY - pylonTop) * 0.35);
+    _drawPartial(canvas, pylon(p1), line, _seg(0.20, 0.50));
+    _drawPartial(canvas, pylon(p2), line, _seg(0.25, 0.55));
+
+    // kabel utama (parabola) antar pilon dan ke tepi
+    final main = Path()
+      ..moveTo(-10, deckY - 20)
+      ..quadraticBezierTo(p1 * 0.6, deckY - 30, p1, pylonTop)
+      ..quadraticBezierTo((p1 + p2) / 2, deckY + (deckY - pylonTop) * 0.55, p2, pylonTop)
+      ..quadraticBezierTo(p2 + (w - p2) * 0.4, deckY - 30, w + 10, deckY - 20);
+    _drawPartial(canvas, main, line, _seg(0.40, 0.75));
+
+    // kabel penggantung vertikal
+    final hp = _seg(0.60, 0.90);
+    if (hp > 0) {
+      final metric = main.computeMetrics().first;
+      const n = 46;
+      for (var k = 1; k < n; k++) {
+        if (k / n > hp) break;
+        final pos = metric.getTangentForOffset(metric.length * k / n)?.position;
+        if (pos == null || pos.dy >= deckY - 4) continue;
+        canvas.drawLine(pos, Offset(pos.dx, deckY), thin);
       }
-      x += bw + 6;
     }
 
-    // Suspension bridge silhouette, foreground, spanning the width
-    final bridgePaint = Paint()
-      ..color = Colors.black.withOpacity(0.45)
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final pylon1X = w * 0.28;
-    final pylon2X = w * 0.72;
-    final pylonTop = h * 0.38;
-    final deckY = h * 0.62;
-
-    canvas.drawLine(Offset(pylon1X, pylonTop), Offset(pylon1X, deckY + 10), bridgePaint..strokeWidth = 6);
-    canvas.drawLine(Offset(pylon2X, pylonTop), Offset(pylon2X, deckY + 10), bridgePaint);
-    canvas.drawLine(Offset(-10, deckY), Offset(w + 10, deckY), bridgePaint..strokeWidth = 4);
-
-    final cablePaint = Paint()
-      ..color = Colors.black.withOpacity(0.35)
-      ..strokeWidth = 2;
-    for (double t = 0; t <= 1; t += 0.12) {
-      canvas.drawLine(
-        Offset(pylon1X - (pylon1X * t), pylonTop + (deckY - pylonTop) * (1 - (1 - t) * (1 - t))),
-        Offset(pylon1X - (pylon1X * t), deckY),
-        cablePaint,
-      );
-      canvas.drawLine(
-        Offset(pylon2X + ((w - pylon2X) * t), pylonTop + (deckY - pylonTop) * (1 - (1 - t) * (1 - t))),
-        Offset(pylon2X + ((w - pylon2X) * t), deckY),
-        cablePaint,
-      );
+    // ---- garis ukur (dimensi) antar pilon, gaya gambar teknik
+    final dp = _seg(0.75, 1.0);
+    if (dp > 0) {
+      final dim = Paint()
+        ..color = Colors.white.withOpacity(0.35 * dp)
+        ..strokeWidth = 1;
+      final dy = deckY + 110;
+      canvas.drawLine(Offset(p1, dy), Offset(p1 + (p2 - p1) * dp, dy), dim);
+      canvas.drawLine(Offset(p1, deckY + 74), Offset(p1, dy + 8), dim);
+      if (dp >= 1) canvas.drawLine(Offset(p2, deckY + 74), Offset(p2, dy + 8), dim);
+      for (final x in [p1, p2]) {
+        canvas.drawLine(Offset(x - 5, dy + 5), Offset(x + 5, dy - 5), dim..strokeWidth = 1.4);
+      }
+      final tp = TextPainter(
+        text: TextSpan(
+          text: 'Bentang utama',
+          style: TextStyle(fontFamily: kFont, color: Colors.white.withOpacity(0.35 * dp), fontSize: 11, letterSpacing: 0.6),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset((p1 + p2) / 2 - tp.width / 2, dy - 18));
     }
 
-    // Water reflections (soft vertical light streaks)
-    final reflectionPaint = Paint()..color = const Color(0xFFFFD873).withOpacity(0.15);
-    for (double rx = 40; rx < w; rx += 90) {
-      canvas.drawRect(Rect.fromLTWH(rx, waterTop, 3, h - waterTop), reflectionPaint);
+    // ---- jalan + marka kuning putus-putus di bawah
+    final roadY = h * 0.93;
+    final mp = _seg(0.10, 0.60);
+    if (mp > 0) {
+      final edge = Paint()
+        ..color = Colors.white.withOpacity(0.12)
+        ..strokeWidth = 1;
+      canvas.drawLine(Offset(0, roadY - 22), Offset(w * mp, roadY - 22), edge);
+      canvas.drawLine(Offset(0, roadY + 22), Offset(w * mp, roadY + 22), edge);
+      final marka = Paint()
+        ..color = YmColors.marka.withOpacity(0.9)
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round;
+      for (double x = 20; x < w * mp; x += 64) {
+        canvas.drawLine(Offset(x, roadY), Offset(x + 30, roadY), marka);
+      }
     }
-
-    // Soft moon/glow top-right
-    final glowPaint = Paint()
-      ..shader = RadialGradient(colors: [Colors.white.withOpacity(0.25), Colors.transparent])
-          .createShader(Rect.fromCircle(center: Offset(w * 0.82, h * 0.16), radius: 90));
-    canvas.drawCircle(Offset(w * 0.82, h * 0.16), 90, glowPaint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _BlueprintPainter old) => old.t != t;
 }

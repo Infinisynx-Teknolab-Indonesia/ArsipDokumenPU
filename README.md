@@ -142,6 +142,20 @@ PC tujuan **tidak perlu** Flutter, Python, ataupun MySQL. Cukup bisa menjangkau 
 4. Akun `administrator` bawaan otomatis nonaktif. Tambahkan staf di **Staf & Admin**.
 5. Lakukan langkah 2–3 sekali di setiap PC (oleh admin). Setelah itu staf cukup login.
 
+## Tampilan
+
+Tema "gambar kerja PU": sidebar biru tinta, halaman kertas terang, kartu putih bergaris tipis tanpa bayangan, dan satu aksen kuning marka jalan.
+
+- **Huruf:** Plus Jakarta Sans, sudah dibundel di `assets/fonts` (lisensi OFL), jadi tampilannya sama di Windows dan macOS.
+- **Animasi:**
+  - pindah menu → halaman bergeser masuk sambil memudar;
+  - penanda kuning di sidebar meluncur ke menu yang dipilih;
+  - judul halaman bergeser saat berganti;
+  - form login meluncur dari kanan;
+  - gambar jembatan di layar login tergambar sendiri satu kali.
+- Semua animasi otomatis dimatikan kalau "kurangi animasi" aktif di pengaturan Windows/macOS.
+- Warna, huruf, dan durasi animasi diatur di satu tempat: `lib/theme/ym_theme.dart`.
+
 ## Fitur
 
 | Menu | Isi |

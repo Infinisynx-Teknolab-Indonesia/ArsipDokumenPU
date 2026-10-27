@@ -35,6 +35,22 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Plus Jakarta Sans — huruf karya desainer Jakarta (lisensi OFL, assets/fonts/OFL-PlusJakartaSans.txt).
+  # Dibundel supaya tampilan sama persis di semua PC Windows & Mac.
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+        - asset: assets/fonts/PlusJakartaSans-Italic.ttf
+          style: italic
+        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/PlusJakartaSans-ExtraBold.ttf
+          weight: 800
   assets:
     - assets/icons/app_icon.ico
     - assets/icons/tray_icon_mac.png   # ikon menu bar macOS

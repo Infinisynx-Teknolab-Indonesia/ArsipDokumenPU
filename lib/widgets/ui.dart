@@ -4,8 +4,9 @@ import '../core/file_tools.dart';
 import '../core/models.dart';
 import '../theme/ym_theme.dart';
 
-/// Kartu statistik di Dashboard.
-class StatCard extends StatelessWidget {
+/// Kartu angka di Dashboard: angka besar, keterangan di bawahnya, ikon kecil
+/// berwarna di pojok. Disorot halus saat mouse di atasnya (kalau bisa diklik).
+class StatCard extends StatefulWidget {
   final String label;
   final String value;
   final IconData icon;
@@ -16,39 +17,53 @@ class StatCard extends StatelessWidget {
   const StatCard({super.key, required this.label, required this.value, required this.icon, required this.color, this.sub, this.onTap});
 
   @override
+  State<StatCard> createState() => _StatCardState();
+}
+
+class _StatCardState extends State<StatCard> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.all(18),
+    final w = widget;
+    final active = _hover && w.onTap != null;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: w.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+      child: GestureDetector(
+        onTap: w.onTap,
+        child: AnimatedContainer(
+          duration: motion(context, kMotionFast),
+          curve: kMotionCurve,
+          padding: const EdgeInsets.fromLTRB(20, 18, 18, 18),
           decoration: BoxDecoration(
+            color: Colors.white,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: YmColors.borderLavender),
+            border: Border.all(color: active ? w.color.withOpacity(0.55) : YmColors.line),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: color, size: 26),
+              Row(
+                children: [
+                  Expanded(child: Text(w.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: YmTextStyles.label.copyWith(fontSize: 12.5, fontWeight: FontWeight.w600))),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(color: w.color.withOpacity(0.10), borderRadius: BorderRadius.circular(9)),
+                    child: Icon(w.icon, color: w.color, size: 18),
+                  ),
+                ],
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(label, style: YmTextStyles.label.copyWith(fontSize: 12)),
-                    const SizedBox(height: 3),
-                    Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: YmColors.textDark)),
-                    if (sub != null) Text(sub!, style: YmTextStyles.label.copyWith(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 8),
+              Text(w.value,
+                  style: const TextStyle(fontFamily: kFont, fontSize: 28, fontWeight: FontWeight.w800, color: YmColors.textDark, letterSpacing: -0.6, height: 1.1)),
+              if (w.sub != null) ...[
+                const SizedBox(height: 4),
+                Text(w.sub!, style: YmTextStyles.label.copyWith(fontSize: 11.5), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ],
             ],
           ),
         ),
@@ -66,8 +81,8 @@ class CategoryBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = categoryOf(code);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: c.color.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(color: c.color.withOpacity(0.09), borderRadius: BorderRadius.circular(20)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -97,13 +112,17 @@ class DocStatusChip extends StatelessWidget {
       DocStatus.pending => (YmColors.statusAway, Icons.schedule_rounded),
       DocStatus.failed => (YmColors.buzzRed, Icons.error_outline_rounded),
     };
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 4),
-        Text(statusLabel(status), style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.09), borderRadius: BorderRadius.circular(20)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
+          Text(statusLabel(status), style: TextStyle(fontFamily: kFont, fontSize: 11, color: color, fontWeight: FontWeight.w700)),
+        ],
+      ),
     );
   }
 }
@@ -151,16 +170,20 @@ class EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 76,
-              height: 76,
-              decoration: BoxDecoration(color: YmColors.accentPurple.withOpacity(0.08), shape: BoxShape.circle),
-              child: Icon(icon, size: 36, color: YmColors.accentPurple),
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: YmColors.line),
+              ),
+              child: Icon(icon, size: 28, color: YmColors.puBlue),
             ),
-            const SizedBox(height: 14),
-            Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: YmColors.textDark)),
+            const SizedBox(height: 16),
+            Text(title, textAlign: TextAlign.center, style: YmTextStyles.sectionTitle.copyWith(fontSize: 15)),
             const SizedBox(height: 6),
-            SizedBox(width: 420, child: Text(message, textAlign: TextAlign.center, style: YmTextStyles.label.copyWith(fontSize: 12.5, height: 1.4))),
-            if (action != null) ...[const SizedBox(height: 16), action!],
+            SizedBox(width: 420, child: Text(message, textAlign: TextAlign.center, style: YmTextStyles.label.copyWith(fontSize: 13, height: 1.5))),
+            if (action != null) ...[const SizedBox(height: 18), action!],
           ],
         ),
       ),
@@ -176,7 +199,7 @@ class PageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const pad = EdgeInsets.fromLTRB(24, 20, 24, 24);
+    const pad = EdgeInsets.fromLTRB(28, 24, 28, 28);
     return scroll ? SingleChildScrollView(padding: pad, child: child) : Padding(padding: pad, child: child);
   }
 }
@@ -195,11 +218,12 @@ class FilterDropdown<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: width,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      height: 42,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: YmColors.borderLavender),
+        border: Border.all(color: YmColors.line),
       ),
       child: Row(
         children: [
@@ -212,7 +236,8 @@ class FilterDropdown<T> extends StatelessWidget {
                 items: items,
                 onChanged: onChanged,
                 isExpanded: true,
-                style: const TextStyle(fontSize: 12.5, color: YmColors.textDark),
+                style: const TextStyle(fontFamily: kFont, fontSize: 12.5, color: YmColors.textDark, fontWeight: FontWeight.w500),
+                icon: const Icon(Icons.expand_more_rounded, size: 18, color: YmColors.textMuted),
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
