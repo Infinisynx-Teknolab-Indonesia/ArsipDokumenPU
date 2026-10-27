@@ -1,5 +1,6 @@
 """Isi data contoh secara manual: 9 proyek, akun staf (budi/sari), dan 50 dokumen
-(PDF, Word, Excel, TXT, foto) tahun 2000-2026, sebagian saling berhubungan.
+(PDF, Word, Excel, TXT, foto) tahun 2000-2026, dua bahasa (Inggris & Indonesia),
+10 dokumen per kategori: Invoices, Contracts, Tax, Shipments, Meeting Minutes.
 
     D:\\python3.12\\python.exe seed_demo.py
 

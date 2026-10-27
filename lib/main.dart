@@ -12,6 +12,7 @@ import 'screens/shell_screen.dart';
 import 'widgets/common.dart';
 import 'services/find_shortcut.dart';
 import 'services/nav.dart';
+import 'services/shortcuts.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +40,21 @@ Future<void> main() async {
 
   await AppState.instance.load();
   await ThemeCtl.instance.load(); // tema pilihan pengguna (Pengaturan → Tema tampilan)
+  await ShortcutCtl.instance.load(); // pintasan keyboard (Pengaturan → Pintasan keyboard)
+  ShortcutCtl.instance.install({
+    AppAction.globalSearch: _focusGlobalSearch,
+    AppAction.pageFind: () => FindShortcut.run(appNavigatorKey.currentState),
+    AppAction.fullscreen: () => toggleFullScreen(),
+    AppAction.upload: () {
+      if (AppState.instance.session == null) return;
+      appNavigatorKey.currentState?.popUntil((r) => r.isFirst);
+      Nav.go('upload');
+    },
+    AppAction.sync: () {
+      final app = AppState.instance;
+      if (app.session != null && !app.setupMode && !app.syncing) app.tick(forcePull: true);
+    },
+  });
   // System tray persis Batam ChitChat: klik kanan -> Buka / Logout / Keluar.
   // "Keluar" dari tray langsung menutup aplikasi.
   await TrayService.init(
@@ -76,19 +92,10 @@ class ArsipApp extends StatelessWidget {
           return MediaQuery(
             // "Kurangi animasi" dari Pengaturan aplikasi ATAU dari Windows/macOS
             data: mq.copyWith(disableAnimations: mq.disableAnimations || ThemeCtl.instance.lessMotion),
+            // Pintasan keyboard (Ctrl+K, Ctrl+F, F11, ...) dipasang global lewat
+            // ShortcutCtl (services/shortcuts.dart) — bisa diatur di Pengaturan.
             child: CallbackShortcuts(
-              bindings: {
-                // F11 = keluar/masuk full screen di layar mana pun.
-                const SingleActivator(LogicalKeyboardKey.f11): toggleFullScreen,
-                // macOS: Ctrl + Cmd + F (standar Mac untuk layar penuh)
-                const SingleActivator(LogicalKeyboardKey.keyF, control: true, meta: true): toggleFullScreen,
-                // Ctrl+F / ⌘F di mana saja = pencarian (lihat services/find_shortcut.dart)
-                const SingleActivator(LogicalKeyboardKey.keyF, control: true): () => FindShortcut.run(appNavigatorKey.currentState),
-                const SingleActivator(LogicalKeyboardKey.keyF, meta: true): () => FindShortcut.run(appNavigatorKey.currentState),
-                // Ctrl+K / ⌘K = kolom cari di top bar (cari di seluruh arsip)
-                const SingleActivator(LogicalKeyboardKey.keyK, control: true): _focusGlobalSearch,
-                const SingleActivator(LogicalKeyboardKey.keyK, meta: true): _focusGlobalSearch,
-              },
+              bindings: const {},
               child: Focus(
                 autofocus: true,
                 // Title bar: tampil di mode jendela; saat full screen tersembunyi

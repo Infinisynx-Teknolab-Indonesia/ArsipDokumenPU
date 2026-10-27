@@ -1,4 +1,6 @@
 /// Model data aplikasi Arsip Dokumen Proyek PU.
+import 'server_config.dart';
+import 'categories.dart';
 
 class AppSettings {
   /// Alamat dasar API, contoh: http://192.168.1.10:8000/api
@@ -24,6 +26,10 @@ class AppSettings {
   /// Kapan daftar akun terakhir disalin dari server ('' = belum pernah).
   final String usersSyncedAt;
 
+  /// 'default' = pakai alamat server bawaan (hardcode, lihat core/server_config.dart)
+  /// 'custom'  = pakai alamat yang diisi admin di menu Koneksi Server ([apiUrl]).
+  final String serverMode;
+
   const AppSettings({
     this.apiUrl = '',
     this.connected = false,
@@ -32,19 +38,40 @@ class AppSettings {
     this.deviceKey = '',
     this.deviceId = 0,
     this.usersSyncedAt = '',
+    this.serverMode = 'default',
   });
 
-  AppSettings copyWith({String? deviceKey, int? deviceId, String? usersSyncedAt}) => AppSettings(
-        apiUrl: apiUrl,
-        connected: connected,
-        serverName: serverName,
-        agencyName: agencyName,
+  AppSettings copyWith({
+    String? apiUrl,
+    bool? connected,
+    String? serverName,
+    String? agencyName,
+    String? deviceKey,
+    int? deviceId,
+    String? usersSyncedAt,
+    String? serverMode,
+  }) =>
+      AppSettings(
+        apiUrl: apiUrl ?? this.apiUrl,
+        connected: connected ?? this.connected,
+        serverName: serverName ?? this.serverName,
+        agencyName: agencyName ?? this.agencyName,
         deviceKey: deviceKey ?? this.deviceKey,
         deviceId: deviceId ?? this.deviceId,
         usersSyncedAt: usersSyncedAt ?? this.usersSyncedAt,
+        serverMode: serverMode ?? this.serverMode,
       );
 
-  bool get hasApi => apiUrl.trim().isNotEmpty;
+  /// Memakai server bawaan (hardcode)?
+  bool get usesDefault => serverMode == 'default' && hasDefaultServer;
+
+  /// Alamat API yang benar-benar dipakai.
+  String get activeUrl => usesDefault ? kDefaultServerUrl : apiUrl;
+
+  /// Sudah terhubung ke server (server bawaan dianggap selalu terhubung).
+  bool get isConnected => usesDefault || connected;
+
+  bool get hasApi => activeUrl.trim().isNotEmpty;
 
   Map<String, Object?> toJson() => {
         'api_url': apiUrl,
@@ -54,6 +81,7 @@ class AppSettings {
         'device_key': deviceKey,
         'device_id': deviceId,
         'users_synced_at': usersSyncedAt,
+        'server_mode': serverMode,
       };
 
   factory AppSettings.fromJson(Map<String, Object?> j) => AppSettings(
@@ -64,6 +92,10 @@ class AppSettings {
         deviceKey: (j['device_key'] ?? '').toString(),
         deviceId: (j['device_id'] as num?)?.toInt() ?? 0,
         usersSyncedAt: (j['users_synced_at'] ?? '').toString(),
+        // pengaturan lama (sebelum ada server bawaan): yang sudah terhubung ke alamat lain tetap 'custom'
+        serverMode: (j['server_mode'] ??
+                ((j['connected'] == true && (j['api_url'] ?? '').toString().isNotEmpty && j['api_url'] != kDefaultServerUrl) ? 'custom' : 'default'))
+            .toString(),
       );
 }
 
@@ -281,7 +313,7 @@ class DocRecord {
     required this.title,
     this.docNumber = '',
     this.docDate = '',
-    this.category = 'LAINNYA',
+    this.category = defaultCategory,
     this.projectId = '',
     this.projectCode = '',
     this.projectName = '',
@@ -351,7 +383,7 @@ class DocRecord {
         title: (j['title'] ?? j['name'] ?? '').toString(),
         docNumber: (j['doc_number'] ?? '').toString(),
         docDate: (j['doc_date'] ?? '').toString(),
-        category: (j['category'] ?? 'LAINNYA').toString(),
+        category: normalizeCategory((j['category'] ?? defaultCategory).toString()),
         projectId: (j['project_id'] ?? '').toString(),
         projectCode: (j['project_code'] ?? '').toString(),
         projectName: (j['project_name'] ?? '').toString(),
@@ -379,7 +411,7 @@ class DocRecord {
         title: (j['title'] ?? '').toString(),
         docNumber: (j['doc_number'] ?? '').toString(),
         docDate: (j['doc_date'] ?? '').toString(),
-        category: (j['category'] ?? 'LAINNYA').toString(),
+        category: normalizeCategory((j['category'] ?? defaultCategory).toString()),
         projectId: (j['project_id'] ?? '').toString(),
         projectCode: (j['project_code'] ?? '').toString(),
         projectName: (j['project_name'] ?? '').toString(),

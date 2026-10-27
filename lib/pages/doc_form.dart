@@ -13,7 +13,7 @@ class DocMeta {
   final description = TextEditingController();
   final tags = TextEditingController();
   final series = TextEditingController();
-  String category = 'LAINNYA';
+  String category = defaultCategory;
   String projectId = '';
   String docDate = isoDate(DateTime.now());
 
@@ -125,7 +125,7 @@ class _DocMetaFieldsState extends State<DocMetaFields> {
                     ),
                 ],
                 onChanged: (v) {
-                  setState(() => m.category = v ?? 'LAINNYA');
+                  setState(() => m.category = v ?? defaultCategory);
                   widget.onChanged?.call();
                 },
               ),

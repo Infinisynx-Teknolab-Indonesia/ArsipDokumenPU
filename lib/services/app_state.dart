@@ -8,6 +8,7 @@ import '../core/models.dart';
 import '../core/pbkdf2.dart';
 import '../core/format.dart';
 import '../core/smart_search.dart';
+import '../core/server_config.dart';
 import 'api_client.dart';
 
 enum NetStatus { notConfigured, checking, online, offline }
@@ -58,13 +59,13 @@ class AppState extends ChangeNotifier {
   DateTime? _lastUserSync;
   DateTime? _lastPull;
 
-  ApiClient? get api => settings.hasApi ? ApiClient(settings.apiUrl, deviceKey: settings.deviceKey) : null;
+  ApiClient? get api => settings.hasApi ? ApiClient(settings.activeUrl, deviceKey: settings.deviceKey) : null;
 
   /// Status persetujuan PC ini dari server: pending | approved | rejected | revoked | '' (belum tahu).
   String deviceStatus = '';
   String deviceMessage = '';
   bool get deviceApproved => deviceStatus == 'approved';
-  bool get setupMode => !settings.connected;
+  bool get setupMode => !settings.isConnected;
   bool get isOnline => net == NetStatus.online;
   bool get canUseServer => isOnline && !setupMode && session != null && !session!.isSetupAdmin;
   String get agencyName => settings.agencyName.isEmpty ? 'Dinas Pekerjaan Umum' : settings.agencyName;
@@ -212,8 +213,27 @@ class AppState extends ChangeNotifier {
     } on ApiOfflineException {
       net = NetStatus.offline;
       notifyListeners();
+      // Darurat: server (bawaan) tidak terjangkau & belum ada akun tersimpan di PC ini ->
+      // administrator/administrator boleh masuk untuk mengganti alamat server.
+      if (username.toLowerCase() == defaultAdminUser && password == defaultAdminPass && !users.any((u) => u.hash.isNotEmpty)) {
+        session = Session(username: defaultAdminUser, fullName: 'Administrator (sementara)', role: 'admin', password: password, isSetupAdmin: true);
+        notifyListeners();
+        return null;
+      }
       return _offlineLogin(username, password);
     }
+  }
+
+  /// Pakai alamat server bawaan (hardcode). Kunci PC lama dibuang bila alamatnya berbeda.
+  Future<void> useDefaultServer() async {
+    if (!hasDefaultServer) return;
+    final changed = settings.activeUrl != kDefaultServerUrl;
+    settings = settings.copyWith(serverMode: 'default', deviceKey: changed ? '' : null, deviceId: changed ? 0 : null);
+    await _saveSettings();
+    if (session?.isSetupAdmin == true) session = null; // masuk lagi dengan akun server
+    net = NetStatus.checking;
+    notifyListeners();
+    unawaited(tick());
   }
 
   Future<void> _afterOnlineLogin() async {
@@ -289,11 +309,15 @@ class AppState extends ChangeNotifier {
       final client = ApiClient(url);
       final r = await client.login(adminUser.trim(), adminPass);
       if (r.role != 'admin') return 'Akun "${r.username}" bukan admin di server.';
+      final sameServer = url == settings.activeUrl;
       settings = AppSettings(
         apiUrl: url,
         connected: true,
         serverName: (info['server'] ?? '').toString(),
         agencyName: (info['agency'] ?? '').toString(),
+        serverMode: 'custom',
+        deviceKey: sameServer ? settings.deviceKey : '',
+        deviceId: sameServer ? settings.deviceId : 0,
       );
       await _saveSettings();
       session = Session(username: r.username, fullName: r.fullName, role: r.role, password: adminPass, token: r.token);
@@ -314,7 +338,8 @@ class AppState extends ChangeNotifier {
   /// Putuskan dari server: akun default administrator aktif lagi, cache akun
   /// & proyek dihapus. Dokumen yang BELUM terupload tetap disimpan.
   Future<void> disconnectServer() async {
-    settings = const AppSettings();
+    // kembali ke mode awal (tanpa server bawaan) — admin bisa memilih lagi di Koneksi Server
+    settings = const AppSettings(serverMode: 'custom');
     users = [];
     projects = [];
     await _saveSettings();
@@ -634,8 +659,15 @@ class AppState extends ChangeNotifier {
       }
       final wasOffline = net != NetStatus.online;
       try {
-        await client.health();
+        final info = await client.health();
         net = NetStatus.online;
+        // nama instansi & jenis server ikut diperbarui (penting untuk server bawaan)
+        final agency = (info['agency'] ?? '').toString();
+        final server = (info['server'] ?? '').toString();
+        if ((agency.isNotEmpty && agency != settings.agencyName) || (server.isNotEmpty && server != settings.serverName)) {
+          settings = settings.copyWith(agencyName: agency.isEmpty ? null : agency, serverName: server.isEmpty ? null : server);
+          await _saveSettings();
+        }
       } catch (_) {
         net = NetStatus.offline;
         notifyListeners();

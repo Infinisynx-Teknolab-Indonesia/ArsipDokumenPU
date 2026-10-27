@@ -702,10 +702,20 @@ class _DocDetailPageState extends State<_DocDetailPage> {
           if (canEdit)
             OutlinedButton.icon(
               style: outlineButtonStyle(),
-              onPressed: _busy || (!d.isUnsynced && !app.canUseServer) ? null : _edit,
+              onPressed: _busy || d.status == DocStatus.uploading || (!d.isUnsynced && !app.canUseServer) ? null : _edit,
               icon: const Icon(Icons.edit_outlined, size: 17),
-              label: const Text('Edit data dokumen'),
+              label: Text(d.isUnsynced ? 'Edit data (belum terkirim)' : 'Edit data dokumen'),
             ),
+          // belum terkirim (draf / tertunda internet / gagal): boleh dihapus dari antrian
+          if (canEdit && d.isUnsynced) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              style: outlineButtonStyle().copyWith(foregroundColor: WidgetStatePropertyAll(YmColors.danger), iconColor: WidgetStatePropertyAll(YmColors.danger)),
+              onPressed: _busy || d.status == DocStatus.uploading ? null : _delete,
+              icon: const Icon(Icons.delete_outline_rounded, size: 17),
+              label: const Text('Hapus dari antrian'),
+            ),
+          ],
           if (canRequest) ...[
             OutlinedButton.icon(
               style: outlineButtonStyle(),

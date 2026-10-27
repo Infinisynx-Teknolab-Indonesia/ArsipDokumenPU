@@ -42,10 +42,24 @@ ALLOWED_EXTENSIONS = {
     "jpg", "jpeg", "png", "bmp", "gif", "webp", "dwg", "zip", "rar",
 }
 
-CATEGORIES = [
-    "KONTRAK", "SPMK", "RAB", "GAMBAR", "ASBUILT", "LAP_HARIAN", "LAP_MINGGUAN", "LAP_BULANAN",
-    "MC", "FOTO", "BA", "UJI_MUTU", "SURAT", "IZIN", "KEUANGAN", "K3", "LAINNYA",
-]
+# Kategori dokumen (sama persis dengan aplikasi desktop): 5 kategori, dua bahasa.
+CATEGORIES = ["INVOICE", "CONTRACT", "TAX", "SHIPMENT", "MEETING"]
+CATEGORY_LABELS = {
+    "INVOICE": {"en": "Invoices & Receipts", "id": "Faktur & Kuitansi"},
+    "CONTRACT": {"en": "Contracts & Agreements", "id": "Kontrak & Perjanjian"},
+    "TAX": {"en": "Tax & Financial Reports", "id": "Pajak & Laporan Keuangan"},
+    "SHIPMENT": {"en": "Shipments & Trade Dossiers", "id": "Pengiriman & Dokumen Dagang"},
+    "MEETING": {"en": "Meeting Minutes", "id": "Notulen Rapat"},
+}
+DEFAULT_CATEGORY = "CONTRACT"
+
+# Kode kategori versi lama -> kategori baru (dipindahkan otomatis saat server start).
+LEGACY_CATEGORY_MAP = {
+    "KONTRAK": "CONTRACT", "SPMK": "CONTRACT", "BA": "CONTRACT", "IZIN": "CONTRACT", "GAMBAR": "CONTRACT", "ASBUILT": "CONTRACT",
+    "RAB": "TAX", "MC": "TAX", "KEUANGAN": "TAX",
+    "UJI_MUTU": "SHIPMENT", "FOTO": "SHIPMENT",
+    "LAP_HARIAN": "MEETING", "LAP_MINGGUAN": "MEETING", "LAP_BULANAN": "MEETING", "SURAT": "MEETING", "K3": "MEETING", "LAINNYA": "MEETING",
+}
 
 # Iterasi PBKDF2: login di server (kuat) & hash offline untuk aplikasi (lebih ringan,
 # dihitung di PC staf saat login offline).

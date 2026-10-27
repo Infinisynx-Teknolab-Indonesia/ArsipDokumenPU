@@ -90,6 +90,16 @@ class HoverCard extends StatefulWidget {
   final Color? color;
   final Color? borderColor;
   final double radius;
+
+  /// Latar gradasi (mis. kartu "perlu ditinjau": from-tertiary-fixed/20 via-transparent).
+  final Gradient? gradient;
+
+  /// Warna latar saat disorot (versi web: hover:bg-surface-container).
+  final Color? hoverColor;
+
+  /// Bayangan khusus (null = shadow-sm / hover:shadow-md).
+  final List<BoxShadow>? baseShadowOverride;
+  final List<BoxShadow>? hoverShadowOverride;
   const HoverCard({
     super.key,
     required this.child,
@@ -97,7 +107,11 @@ class HoverCard extends StatefulWidget {
     this.padding = const EdgeInsets.all(16),
     this.color,
     this.borderColor,
-    this.radius = 14,
+    this.radius = 12,
+    this.gradient,
+    this.hoverColor,
+    this.baseShadowOverride,
+    this.hoverShadowOverride,
   });
 
   @override
@@ -120,15 +134,16 @@ class _HoverCardState extends State<HoverCard> {
         child: AnimatedContainer(
           duration: motion(context, const Duration(milliseconds: 200)),
           curve: kMotionCurve,
-          transform: Matrix4.translationValues(0, _hover && !reduceMotion(context) ? -2 : 0, 0),
+          transform: Matrix4.translationValues(0, _hover && w.onTap != null && !reduceMotion(context) ? -1 : 0, 0),
           padding: w.padding,
           decoration: BoxDecoration(
-            color: w.color ?? YmColors.surface,
+            color: _hover && w.hoverColor != null ? w.hoverColor : (w.color ?? YmColors.surface),
+            gradient: w.gradient,
             borderRadius: BorderRadius.circular(w.radius),
             border: w.borderColor != null
                 ? Border.all(color: w.borderColor!)
                 : (YmColors.isDark ? Border.all(color: _hover ? YmColors.primary.withOpacity(0.5) : YmColors.line) : null),
-            boxShadow: _hover ? hoverShadow : softShadow,
+            boxShadow: _hover ? (w.hoverShadowOverride ?? hoverShadow) : (w.baseShadowOverride ?? softShadow),
           ),
           child: Material(type: MaterialType.transparency, child: w.child),
         ),
@@ -137,7 +152,9 @@ class _HoverCardState extends State<HoverCard> {
   }
 }
 
-/// Chip kecil (versi web: px-2 py-0.5 rounded-md / rounded-full).
+/// Chip kecil persis versi web.
+/// - chip kategori: `px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm`
+/// - pill status:   `px-2.5 py-0.5 rounded-full font-label-sm font-semibold` + ikon 14
 class SoftChip extends StatelessWidget {
   final String text;
   final IconData? icon;
@@ -145,29 +162,40 @@ class SoftChip extends StatelessWidget {
   final Color? bg;
   final bool pill;
   final bool bold;
-  const SoftChip(this.text, {super.key, this.icon, this.fg, this.bg, this.pill = false, this.bold = false});
 
-  /// Chip status hijau / oranye / merah / biru.
-  factory SoftChip.success(String t, {IconData? icon}) => SoftChip(t, icon: icon, fg: YmColors.success, bg: YmColors.successSoft, pill: true, bold: true);
-  factory SoftChip.warning(String t, {IconData? icon}) => SoftChip(t, icon: icon, fg: YmColors.warning, bg: YmColors.warningSoft, pill: true, bold: true);
-  factory SoftChip.danger(String t, {IconData? icon}) => SoftChip(t, icon: icon, fg: YmColors.danger, bg: YmColors.dangerSoft, pill: true, bold: true);
-  factory SoftChip.primary(String t, {IconData? icon}) => SoftChip(t, icon: icon, fg: YmColors.primary, bg: YmColors.primarySoft, pill: true, bold: true);
+  /// Titik bulat kecil di depan teks (versi web: w-1.5 h-1.5 rounded-full).
+  final Color? dot;
+  const SoftChip(this.text, {super.key, this.icon, this.fg, this.bg, this.pill = false, this.bold = false, this.dot});
+
+  /// Chip status hijau / biru / oranye / merah (warna persis versi web).
+  factory SoftChip.success(String t, {IconData? icon, Color? dot}) =>
+      SoftChip(t, icon: icon, dot: dot, fg: YmColors.onSuccessSoft, bg: YmColors.successContainer.withOpacity(0.5), pill: true, bold: true);
+  factory SoftChip.successStrong(String t, {IconData? icon, Color? dot}) =>
+      SoftChip(t, icon: icon, dot: dot, fg: YmColors.onSuccessContainer, bg: YmColors.successContainer, pill: true, bold: true);
+  factory SoftChip.primary(String t, {IconData? icon, Color? dot}) =>
+      SoftChip(t, icon: icon, dot: dot, fg: YmColors.onPrimaryFixed, bg: YmColors.primaryFixed, pill: true, bold: true);
+  factory SoftChip.warning(String t, {IconData? icon, Color? dot}) =>
+      SoftChip(t, icon: icon, dot: dot, fg: YmColors.onWarningSoft, bg: YmColors.warningSoft, pill: true, bold: true);
+  factory SoftChip.danger(String t, {IconData? icon, Color? dot}) =>
+      SoftChip(t, icon: icon, dot: dot, fg: YmColors.onDangerSoft, bg: YmColors.dangerSoft, pill: true, bold: true);
+  factory SoftChip.neutral(String t, {IconData? icon}) => SoftChip(t, icon: icon, fg: YmColors.textMuted, bg: YmColors.surfaceContainerHigh, pill: true);
 
   @override
   Widget build(BuildContext context) {
     final f = fg ?? YmColors.textMuted;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: pill ? 9 : 7, vertical: 3),
-      decoration: BoxDecoration(color: bg ?? YmColors.surfaceContainer, borderRadius: BorderRadius.circular(pill ? 20 : 6)),
+      padding: EdgeInsets.symmetric(horizontal: pill ? 10 : 8, vertical: 2),
+      decoration: BoxDecoration(color: bg ?? YmColors.surfaceContainer, borderRadius: BorderRadius.circular(pill ? 999 : 6)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[Icon(icon, size: 13, color: f), const SizedBox(width: 4)],
+          if (dot != null) ...[Container(width: 6, height: 6, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)), const SizedBox(width: 6)],
+          if (icon != null) ...[Icon(icon, size: 14, color: f), const SizedBox(width: 4)],
           Flexible(
             child: Text(text,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontFamily: kFont, fontSize: 11, height: 1.3, fontWeight: bold ? FontWeight.w600 : FontWeight.w500, color: f, letterSpacing: 0.1)),
+                style: YmTextStyles.labelSm.copyWith(color: f, fontWeight: bold ? FontWeight.w600 : FontWeight.w500)),
           ),
         ],
       ),
@@ -175,25 +203,30 @@ class SoftChip extends StatelessWidget {
   }
 }
 
-/// Tanda tombol keyboard (mis. "Ctrl K").
+/// Tanda tombol keyboard persis versi web:
+/// `px-2 py-0.5 rounded-lg bg-surface-container-highest text-on-surface-variant font-label-sm shadow-sm`.
+/// [small] = gaya di kotak saring (`px-1.5 py-0.5 rounded bg-surface-container text-outline`).
 class KbdHint extends StatelessWidget {
   final String text;
-  const KbdHint(this.text, {super.key});
+  final bool small;
+  const KbdHint(this.text, {super.key, this.small = false});
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        padding: EdgeInsets.symmetric(horizontal: small ? 6 : 8, vertical: 2),
         decoration: BoxDecoration(
-          color: YmColors.surfaceHigh,
-          borderRadius: BorderRadius.circular(7),
-          boxShadow: softShadow,
+          color: small ? YmColors.surfaceContainer : YmColors.surfaceHigh,
+          borderRadius: BorderRadius.circular(small ? 4 : 8),
+          boxShadow: small ? null : shadowSm,
         ),
-        child: Text(text, style: TextStyle(fontFamily: kFont, fontSize: 11, fontWeight: FontWeight.w600, color: YmColors.textMuted)),
+        child: Text(text, style: YmTextStyles.labelSm.copyWith(color: small ? YmColors.outline : YmColors.textMuted)),
       );
 }
 
-/// Judul halaman gaya web: breadcrumb + chip ringkas, judul besar, keterangan,
-/// dan tombol aksi di kanan.
+/// Judul halaman persis versi web:
+/// jejak `font-label-md text-outline` dipisah "/" (atau ›) + chip ringkas,
+/// judul `font-display-lg` (36/44, -0.02em), keterangan `font-body-md`
+/// maks 768px, tombol aksi di kanan (rata bawah). Jarak bawah 24.
 class PageHeader extends StatelessWidget {
   final List<String> crumbs;
   final String title;
@@ -202,6 +235,9 @@ class PageHeader extends StatelessWidget {
   final List<Widget> actions;
   final IconData? overlineIcon;
   final String? overline;
+
+  /// true = pemisah jejak berupa ikon › (versi web halaman kategori).
+  final bool chevrons;
 
   const PageHeader({
     super.key,
@@ -212,6 +248,7 @@ class PageHeader extends StatelessWidget {
     this.actions = const [],
     this.overline,
     this.overlineIcon,
+    this.chevrons = false,
   });
 
   @override
@@ -220,42 +257,45 @@ class PageHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (crumbs.isNotEmpty || badge != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 6,
-              runSpacing: 4,
-              children: [
-                for (var i = 0; i < crumbs.length; i++) ...[
-                  if (i > 0) Icon(Icons.chevron_right_rounded, size: 16, color: YmColors.outline),
-                  Text(crumbs[i],
-                      style: TextStyle(
-                        fontFamily: kFont,
-                        fontSize: 12.5,
-                        fontWeight: i == crumbs.length - 1 ? FontWeight.w600 : FontWeight.w500,
-                        color: i == crumbs.length - 1 ? YmColors.textDark : YmColors.outline,
-                      )),
-                ],
-                if (badge != null) ...[const SizedBox(width: 4), badge!],
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (var i = 0; i < crumbs.length; i++) ...[
+                if (i > 0)
+                  chevrons
+                      ? Icon(Icons.chevron_right_rounded, size: 16, color: YmColors.outlineVariant)
+                      : Text('/', style: YmTextStyles.labelSm.copyWith(color: YmColors.outlineVariant)),
+                Text(
+                  crumbs[i],
+                  style: YmTextStyles.labelMd.copyWith(
+                    color: i == crumbs.length - 1 ? YmColors.textDark : (chevrons ? YmColors.textMuted : YmColors.outline),
+                    fontWeight: i == crumbs.length - 1 ? (chevrons ? FontWeight.w600 : FontWeight.w500) : FontWeight.w500,
+                  ),
+                ),
               ],
-            ),
+              if (badge != null) badge!,
+            ],
           ),
         if (overline != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(overlineIcon ?? Icons.verified_rounded, size: 15, color: YmColors.primary),
-              const SizedBox(width: 6),
-              Text(overline!.toUpperCase(), style: YmTextStyles.overline.copyWith(color: YmColors.primary, letterSpacing: 1.1)),
+              Icon(overlineIcon ?? Icons.verified_outlined, size: 18, color: YmColors.primary),
+              const SizedBox(width: 4),
+              Text(overline!.toUpperCase(), style: YmTextStyles.labelSm.copyWith(color: YmColors.primary, letterSpacing: 0.55)),
             ]),
           ),
-        Text(title, style: YmTextStyles.pageTitle),
-        if (subtitle != null) ...[
-          const SizedBox(height: 6),
+        Padding(
+          padding: EdgeInsets.only(top: crumbs.isNotEmpty ? 4 : 0),
+          child: Text(title, style: YmTextStyles.display),
+        ),
+        if (subtitle != null && subtitle!.isNotEmpty) ...[
+          const SizedBox(height: 4),
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 680),
-            child: Text(subtitle!, style: TextStyle(fontFamily: kFont, fontSize: 14, height: 1.55, color: YmColors.textMuted)),
+            constraints: const BoxConstraints(maxWidth: 768),
+            child: Text(subtitle!, style: YmTextStyles.bodyMd),
           ),
         ],
       ],
@@ -265,9 +305,9 @@ class PageHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Expanded(child: left),
-        const SizedBox(width: 20),
+        const SizedBox(width: 16),
         Flexible(
-          child: Wrap(alignment: WrapAlignment.end, spacing: 10, runSpacing: 10, children: actions),
+          child: Wrap(alignment: WrapAlignment.end, crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, runSpacing: 8, children: actions),
         ),
       ],
     );
@@ -351,7 +391,7 @@ class ProgressBar extends StatelessWidget {
       borderRadius: BorderRadius.circular(height),
       child: Container(
         height: height,
-        color: YmColors.surfaceContainer,
+        color: YmColors.surfaceContainerHigh,
         child: TweenAnimationBuilder<double>(
           tween: Tween(begin: 0, end: value.clamp(0.0, 1.0).toDouble()),
           duration: motion(context, const Duration(milliseconds: 900)),
@@ -436,15 +476,21 @@ class _SparkPainter extends CustomPainter {
   bool shouldRepaint(covariant _SparkPainter old) => old.t != t || old.v != v || old.color != color;
 }
 
-/// Kartu angka gaya web: ubin ikon di kiri atas, chip di kanan atas, label,
-/// angka besar (+ satuan), keterangan, dan isi tambahan (grafik / bar).
+/// Kartu angka persis versi web (dashboard):
+/// `p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md`
+/// ubin ikon 40 (rounded-xl) + chip di kanan atas; mt-4 label `font-label-md`;
+/// angka `font-display-lg` + satuan `font-label-sm`; keterangan `font-body-sm` mt-2;
+/// isi bawah (grafik/bar/chip) mt-4 pt-2.
 class StatCard extends StatelessWidget {
   final String label;
   final String value;
   final num? number; // kalau diisi, angka menghitung naik
   final String? unit;
+  final Color? unitColor;
   final IconData icon;
-  final Color color;
+  final Color color; // warna ikon
+  final Color? tileBg; // latar ubin ikon (bawaan: surface-container)
+  final Color? numberColor;
   final String? sub;
   final Widget? chip;
   final Widget? footer;
@@ -458,6 +504,9 @@ class StatCard extends StatelessWidget {
     required this.color,
     this.number,
     this.unit,
+    this.unitColor,
+    this.tileBg,
+    this.numberColor,
     this.sub,
     this.chip,
     this.footer,
@@ -466,10 +515,11 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final numStyle = YmTextStyles.bigNumber.copyWith(color: color == YmColors.danger ? YmColors.danger : YmColors.textDark);
+    final numStyle = YmTextStyles.display.copyWith(color: numberColor ?? YmColors.textDark);
     return HoverCard(
       onTap: onTap,
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      padding: const EdgeInsets.all(24),
+      radius: 12,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -480,15 +530,15 @@ class StatCard extends StatelessWidget {
               Container(
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(color: color.withOpacity(YmColors.isDark ? 0.18 : 0.10), borderRadius: BorderRadius.circular(11)),
-                child: Icon(icon, color: color, size: 21),
+                decoration: BoxDecoration(color: tileBg ?? YmColors.surfaceContainer, borderRadius: BorderRadius.circular(12)),
+                child: Icon(icon, color: color, size: 22),
               ),
               const Spacer(),
               if (chip != null) chip!,
             ],
           ),
-          const SizedBox(height: 14),
-          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: kFont, fontSize: 13, fontWeight: FontWeight.w500, color: YmColors.textMuted)),
+          const SizedBox(height: 16),
+          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: YmTextStyles.labelMd.copyWith(color: YmColors.textMuted)),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -496,23 +546,28 @@ class StatCard extends StatelessWidget {
             children: [
               if (number != null) CountUp(value: number!, style: numStyle) else Flexible(child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: numStyle)),
               if (unit != null) ...[
-                const SizedBox(width: 6),
-                Flexible(child: Text(unit!, maxLines: 1, overflow: TextOverflow.ellipsis, style: YmTextStyles.label.copyWith(fontSize: 12.5))),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(unit!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: YmTextStyles.labelSm.copyWith(color: unitColor ?? YmColors.outline, fontWeight: unitColor == null ? FontWeight.w600 : FontWeight.w600)),
+                ),
               ],
             ],
           ),
           if (sub != null) ...[
-            const SizedBox(height: 6),
-            Text(sub!, style: YmTextStyles.label.copyWith(fontSize: 12, height: 1.45), maxLines: 2, overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 8),
+            Text(sub!, style: YmTextStyles.bodySm, maxLines: 2, overflow: TextOverflow.ellipsis),
           ],
-          if (footer != null) ...[const SizedBox(height: 12), footer!],
+          if (footer != null) ...[const SizedBox(height: 24), footer!],
         ],
       ),
     );
   }
 }
 
-/// Chip kategori (versi web: rounded-md bg-surface-container).
+/// Chip kategori persis versi web: `px-2 py-0.5 rounded-md bg-surface-container font-label-sm`.
 class CategoryBadge extends StatelessWidget {
   final String code;
   final bool compact;
@@ -521,11 +576,11 @@ class CategoryBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = categoryOf(code);
-    return SoftChip(compact ? c.label.split(' ').first : c.label);
+    return SoftChip(compact ? c.label.split(' ').first : c.label, fg: YmColors.textMuted, bg: YmColors.surfaceContainer);
   }
 }
 
-/// Chip status kirim dokumen (pill berwarna lembut).
+/// Pill status kirim dokumen (warna persis versi web).
 class DocStatusChip extends StatelessWidget {
   final DocStatus status;
   const DocStatusChip({super.key, required this.status});
@@ -533,11 +588,11 @@ class DocStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (status) {
-      DocStatus.draft => SoftChip.primary('Draf — belum dikirim', icon: Icons.edit_note_rounded),
+      DocStatus.draft => SoftChip.primary('Draf: belum dikirim', icon: Icons.edit_note_rounded),
       DocStatus.uploaded => SoftChip.success('Tersimpan di server', icon: Icons.check_rounded),
       DocStatus.uploading => SoftChip.primary('Sedang diunggah', icon: Icons.cloud_upload_outlined),
-      DocStatus.pending => SoftChip.warning('Menunggu sinkron', icon: Icons.sync_problem_rounded),
-      DocStatus.failed => SoftChip.danger('Gagal diunggah', icon: Icons.error_outline_rounded),
+      DocStatus.pending => SoftChip.warning('Offline: menunggu sinkron', icon: Icons.sync_problem_outlined),
+      DocStatus.failed => SoftChip.warning('Perlu ditinjau: gagal unggah', icon: Icons.flag_outlined),
     };
   }
 }
@@ -572,22 +627,23 @@ class FileTypeIcon extends StatelessWidget {
   }
 }
 
-/// Ubin ikon kategori (versi web: w-11 h-11 rounded-xl bg-primary-fixed/50).
+/// Ubin ikon dokumen persis versi web: `w-11 h-11 rounded-xl bg-primary-fixed/50 text-primary` (ikon 22).
 class CategoryTile extends StatelessWidget {
   final String code;
   final double size;
-  final Color? tint;
-  const CategoryTile({super.key, required this.code, this.size = 44, this.tint});
+  final Color? bg;
+  final Color? fg;
+  final IconData? icon;
+  const CategoryTile({super.key, required this.code, this.size = 44, this.bg, this.fg, this.icon});
 
   @override
   Widget build(BuildContext context) {
     final c = categoryOf(code);
-    final color = tint ?? YmColors.primary;
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: tint != null ? tint!.withOpacity(0.14) : YmColors.primarySoft.withOpacity(YmColors.isDark ? 1 : 0.6), borderRadius: BorderRadius.circular(size * 0.28)),
-      child: Icon(c.icon, color: color, size: size * 0.5),
+      decoration: BoxDecoration(color: bg ?? YmColors.primaryFixed.withOpacity(YmColors.isDark ? 1 : 0.5), borderRadius: BorderRadius.circular(12)),
+      child: Icon(icon ?? c.icon, color: fg ?? YmColors.primary, size: size / 2),
     );
   }
 }
@@ -627,40 +683,42 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// Pembungkus halaman: padding standar (versi web: 40px) + area scroll opsional.
+/// Pembungkus halaman persis versi web: `<main class="px-space-lg py-space-lg">` = 24 px,
+/// lebar penuh.
 class PageBody extends StatelessWidget {
   final Widget child;
   final bool scroll;
   final double maxWidth;
-  const PageBody({super.key, required this.child, this.scroll = true, this.maxWidth = 1480});
+  const PageBody({super.key, required this.child, this.scroll = true, this.maxWidth = double.infinity});
 
   @override
   Widget build(BuildContext context) {
-    const pad = EdgeInsets.fromLTRB(36, 28, 36, 36);
-    final inner = Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(constraints: BoxConstraints(maxWidth: maxWidth), child: child),
-    );
+    const pad = EdgeInsets.all(24);
+    final inner = maxWidth == double.infinity
+        ? child
+        : Align(alignment: Alignment.topLeft, child: ConstrainedBox(constraints: BoxConstraints(maxWidth: maxWidth), child: child));
     return scroll ? SingleChildScrollView(padding: pad, child: inner) : Padding(padding: pad, child: inner);
   }
 }
 
-/// Dropdown kecil dengan gaya seragam (untuk filter) — versi web: h-10 rounded-xl bg-surface-container-low.
+/// Pilihan saring persis versi web:
+/// `h-11 pl-3 pr-8 rounded-xl bg-surface-container-low font-label-md` + ikon expand 16.
 class FilterDropdown<T> extends StatelessWidget {
   final T value;
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?> onChanged;
   final double width;
   final IconData? icon;
+  final double height;
 
-  const FilterDropdown({super.key, required this.value, required this.items, required this.onChanged, this.width = 200, this.icon});
+  const FilterDropdown({super.key, required this.value, required this.items, required this.onChanged, this.width = 200, this.icon, this.height = 44});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: width,
-      height: 42,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: height,
+      padding: const EdgeInsets.only(left: 12, right: 8),
       decoration: BoxDecoration(color: YmColors.surfaceAlt, borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
@@ -672,9 +730,10 @@ class FilterDropdown<T> extends StatelessWidget {
                 items: items,
                 onChanged: onChanged,
                 isExpanded: true,
+                focusColor: Colors.transparent,
                 dropdownColor: YmColors.surface,
-                style: TextStyle(fontFamily: kFont, fontSize: 13, color: YmColors.textDark, fontWeight: FontWeight.w500),
-                icon: Icon(Icons.expand_more_rounded, size: 18, color: YmColors.outline),
+                style: YmTextStyles.labelMd,
+                icon: Icon(Icons.expand_more_rounded, size: 16, color: YmColors.outline),
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
@@ -685,37 +744,57 @@ class FilterDropdown<T> extends StatelessWidget {
   }
 }
 
-/// Chip filter cepat (versi web: "Recently Added", "Needs Review (14)").
-class QuickChip extends StatelessWidget {
+/// Chip saring cepat persis versi web: `px-3.5 py-1.5 rounded-full font-label-md`.
+/// - terpilih: bg-primary text-on-primary shadow-sm
+/// - biasa: bg-surface-container-low text-on-surface-variant
+/// - [tone] warning: bg-tertiary-fixed text-on-tertiary-fixed (+ ikon tertiary)
+/// - [tone] success: bg-secondary-container/40 text-on-secondary-fixed-variant (+ titik)
+enum ChipTone { normal, warning, success, danger }
+
+class QuickChip extends StatefulWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
   final IconData? icon;
-  final Color? dot;
-  final Color? tone; // warna khusus (mis. oranye untuk "perlu ditinjau")
-  const QuickChip({super.key, required this.label, required this.selected, required this.onTap, this.icon, this.dot, this.tone});
+  final ChipTone tone;
+  const QuickChip({super.key, required this.label, required this.selected, required this.onTap, this.icon, this.tone = ChipTone.normal});
+
+  @override
+  State<QuickChip> createState() => _QuickChipState();
+}
+
+class _QuickChipState extends State<QuickChip> {
+  bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
-    final t = tone;
-    final bg = selected ? YmColors.primary : (t != null ? t.withOpacity(YmColors.isDark ? 0.18 : 0.12) : YmColors.surfaceAlt);
-    final fg = selected ? YmColors.onPrimary : (t ?? YmColors.textMuted);
+    final w = widget;
+    final (Color bg, Color fg, Color iconColor) = w.selected
+        ? (YmColors.primary, YmColors.onPrimary, YmColors.onPrimary)
+        : switch (w.tone) {
+            ChipTone.warning => (YmColors.warningSoft, YmColors.onWarningSoft, YmColors.warning),
+            ChipTone.success => (YmColors.successContainer.withOpacity(0.4), YmColors.onSuccessSoft, YmColors.success),
+            ChipTone.danger => (YmColors.dangerSoft, YmColors.onDangerSoft, YmColors.danger),
+            ChipTone.normal => (_hover ? YmColors.surfaceContainer : YmColors.surfaceAlt, YmColors.textMuted, YmColors.textMuted),
+          };
     return MouseRegion(
       cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
-        onTap: onTap,
+        onTap: w.onTap,
         child: AnimatedContainer(
-          duration: motion(context, const Duration(milliseconds: 200)),
+          duration: motion(context, const Duration(milliseconds: 150)),
           curve: kMotionCurve,
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999), boxShadow: w.selected ? shadowSm : null),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            if (dot != null) ...[
-              Container(width: 7, height: 7, decoration: BoxDecoration(color: selected ? YmColors.onPrimary : dot, shape: BoxShape.circle)),
-              const SizedBox(width: 7),
+            if (w.tone == ChipTone.success && !w.selected) ...[
+              Container(width: 8, height: 8, decoration: BoxDecoration(color: YmColors.success, shape: BoxShape.circle)),
+              const SizedBox(width: 6),
             ],
-            if (icon != null) ...[Icon(icon, size: 15, color: fg), const SizedBox(width: 5)],
-            Text(label, style: TextStyle(fontFamily: kFont, fontSize: 12.5, fontWeight: FontWeight.w600, color: fg)),
+            if (w.icon != null) ...[Icon(w.icon, size: 15, color: iconColor), const SizedBox(width: 6)],
+            Text(w.label, style: YmTextStyles.labelMd.copyWith(color: fg)),
           ]),
         ),
       ),

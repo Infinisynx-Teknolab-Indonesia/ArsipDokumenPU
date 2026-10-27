@@ -147,12 +147,12 @@ Server melampirkan file asli, menambahkan data dokumen (judul, nomor, tanggal, p
 
 Jenis file yang diizinkan: pdf, doc, docx, xls, xlsx, csv, txt, jpg, jpeg, png, bmp, gif, webp, dwg, zip, rar. Batas ukuran default 100 MB.
 
-Kode kategori: `KONTRAK, SPMK, RAB, GAMBAR, ASBUILT, LAP_HARIAN, LAP_MINGGUAN, LAP_BULANAN, MC, FOTO, BA, UJI_MUTU, SURAT, IZIN, KEUANGAN, K3, LAINNYA`.
+Kode kategori (5): `INVOICE` (Invoices & Receipts / Faktur & Kuitansi), `CONTRACT` (Contracts & Agreements / Kontrak & Perjanjian), `TAX` (Tax & Financial Reports / Pajak & Laporan Keuangan), `SHIPMENT` (Shipments & Trade Dossiers / Pengiriman & Dokumen Dagang), `MEETING` (Meeting Minutes / Notulen Rapat). Bawaan `CONTRACT`; kode lama (KONTRAK, RAB, LAINNYA, ...) diterjemahkan otomatis. Label dua bahasa ada di `/health` → `category_labels`.
 
 Objek dokumen:
 ```json
 {"id":15,"client_id":"m2x9k1-a1b2c3d4e5f6","title":"Laporan Mingguan ke-12","doc_number":"...","doc_date":"2026-10-20",
- "category":"LAP_MINGGUAN","project_id":1,"project_code":"PU-JLN-2026-001","project_name":"...",
+ "category":"MEETING","project_id":1,"project_code":"PU-JLN-2026-001","project_name":"...",
  "description":"","tags":"aspal, minggu 12","file_name":"lap_mg12.pdf","file_size":482113,"mime":"application/pdf",
  "sha256":"...","uploaded_by":"budi","uploaded_by_name":"Budi Santoso",
  "created_at":"...","uploaded_at":"...","updated_at":"..."}

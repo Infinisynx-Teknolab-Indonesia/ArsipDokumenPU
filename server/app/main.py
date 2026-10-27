@@ -256,6 +256,7 @@ def health():
 def meta(_: CurrentUser):
     return {
         "categories": config.CATEGORIES,
+        "category_labels": config.CATEGORY_LABELS,
         "allowed_extensions": sorted(config.ALLOWED_EXTENSIONS),
         "max_upload_bytes": config.MAX_UPLOAD_BYTES,
     }
@@ -750,7 +751,7 @@ async def upload_document(
     file: UploadFile = File(...),
     client_id: str = Form(...),
     title: str = Form(...),
-    category: str = Form("LAINNYA"),
+    category: str = Form(config.DEFAULT_CATEGORY),
     doc_number: str = Form(""),
     doc_date: str = Form(""),
     project_id: str = Form(""),
@@ -774,8 +775,9 @@ async def upload_document(
     ext = original.rsplit(".", 1)[-1].lower() if "." in original else ""
     if ext not in config.ALLOWED_EXTENSIONS:
         raise HTTPException(415, f"Jenis file .{ext} tidak diizinkan.")
+    category = config.LEGACY_CATEGORY_MAP.get(category, category)
     if category not in config.CATEGORIES:
-        category = "LAINNYA"
+        category = config.DEFAULT_CATEGORY
 
     proj = None
     if project_id.strip():
@@ -939,7 +941,8 @@ def _apply_doc_changes(db: Session, d: Document, changes: dict) -> list[str]:
             d.doc_date = nd
             changed.append("tanggal")
     if changes.get("category") is not None:
-        cat = changes["category"] if changes["category"] in config.CATEGORIES else "LAINNYA"
+        cat = config.LEGACY_CATEGORY_MAP.get(changes["category"], changes["category"])
+        cat = cat if cat in config.CATEGORIES else config.DEFAULT_CATEGORY
         if cat != d.category:
             d.category = cat
             changed.append("kategori")
@@ -1262,7 +1265,13 @@ DEFAULT_TERMS = [
     ("drainase", "saluran, gorong-gorong, box culvert, u-ditch", ""),
     ("foto", "dokumentasi, progres 0%, progres 50%, progres 100%", ""),
     ("laporan", "lap, report, harian, mingguan, bulanan", ""),
-    ("pembayaran", "termin, uang muka, spp, spm, sp2d", ""),
+    ("pembayaran", "termin, uang muka, spp, spm, sp2d, payment", ""),
+    # Dua bahasa (Inggris <-> Indonesia) untuk 5 kategori
+    ("invoice", "faktur, tagihan, kuitansi, receipt, nota", "Invoices & Receipts / Faktur & Kuitansi"),
+    ("contract", "kontrak, agreement, perjanjian, addendum", "Contracts & Agreements / Kontrak & Perjanjian"),
+    ("tax", "pajak, ppn, pph, vat, withholding, laporan keuangan, financial report", "Tax & Financial Reports / Pajak & Laporan Keuangan"),
+    ("shipment", "pengiriman, bill of lading, packing list, surat jalan, pib, certificate of origin", "Shipments & Trade Dossiers / Pengiriman & Dokumen Dagang"),
+    ("minutes", "notulen, rapat, meeting, notulensi", "Meeting Minutes / Notulen Rapat"),
 ]
 
 

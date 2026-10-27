@@ -61,6 +61,20 @@ class AppPalette {
   final Color warningSoft;
   final Color dangerSoft;
 
+  // ---- token tambahan versi web (null = dihitung otomatis dari warna utama)
+  final Color? primaryContainer; // tombol saat disorot, logo
+  final Color? onPrimaryContainer; // teks redup di atas latar warna utama
+  final Color? primaryFixed; // latar ubin ikon dokumen
+  final Color? onPrimaryFixed; // teks di atas primaryFixed
+  final Color? onSuccessSoft; // teks di atas chip hijau
+  final Color? successContainer; // chip hijau pekat (versi web: secondary-container)
+  final Color? onWarningSoft; // teks di atas chip oranye
+  final Color? onDangerSoft; // teks di atas chip merah
+  final Color? outlineVariant;
+  final Color? inverseSurface; // bar aksi massal (gelap)
+  final Color? inversePrimary;
+  final Color? warningDim; // ubin "tersimpan di PC" (versi web: tertiary-fixed-dim)
+
   const AppPalette({
     required this.id,
     required this.name,
@@ -83,11 +97,23 @@ class AppPalette {
     Color? link,
     required this.accent,
     this.success = const Color(0xFF006C4A),
-    this.warning = const Color(0xFF8A4600),
+    this.warning = const Color(0xFF6E3900),
     this.danger = const Color(0xFFBA1A1A),
-    this.successSoft = const Color(0xFFCDF8E4),
-    this.warningSoft = const Color(0xFFFFE6D3),
+    this.successSoft = const Color(0xFFCDFBE6),
+    this.warningSoft = const Color(0xFFFFDCC3),
     this.dangerSoft = const Color(0xFFFFDAD6),
+    this.primaryContainer,
+    this.onPrimaryContainer,
+    this.primaryFixed,
+    this.onPrimaryFixed,
+    this.onSuccessSoft,
+    this.successContainer,
+    this.onWarningSoft,
+    this.onDangerSoft,
+    this.outlineVariant,
+    this.inverseSurface,
+    this.inversePrimary,
+    this.warningDim,
   }) : link = link ?? primary;
 }
 
@@ -110,6 +136,18 @@ const appPalettes = <AppPalette>[
     muted: Color(0xFF454652),
     outline: Color(0xFF757684),
     accent: Color(0xFF4355B9),
+    primaryContainer: Color(0xFF4355B9),
+    onPrimaryContainer: Color(0xFFD1D6FF),
+    primaryFixed: Color(0xFFDEE0FF),
+    onPrimaryFixed: Color(0xFF00105C),
+    onSuccessSoft: Color(0xFF005137),
+    successContainer: Color(0xFF82F5C1),
+    onWarningSoft: Color(0xFF2F1500),
+    onDangerSoft: Color(0xFF93000A),
+    outlineVariant: Color(0xFFC5C5D4),
+    inverseSurface: Color(0xFF213145),
+    inversePrimary: Color(0xFFBAC3FF),
+    warningDim: Color(0xFFFFB77D),
   ),
   AppPalette(
     id: 'biru',
@@ -223,6 +261,9 @@ class ThemeCtl extends ChangeNotifier {
   /// true = animasi dimatikan di aplikasi ini (selain setelan Windows/macOS).
   bool lessMotion = false;
 
+  /// Bahasa nama kategori: 'en' (English, seperti versi web) | 'id' (Indonesia) | 'both'.
+  String lang = 'en';
+
   /// Naik setiap kali tema diganti — dipakai sebagai key supaya seluruh layar
   /// digambar ulang dengan warna baru.
   int generation = 0;
@@ -235,13 +276,23 @@ class ThemeCtl extends ChangeNotifier {
       final id = (r?['id'] ?? '').toString();
       palette = appPalettes.firstWhere((p) => p.id == id, orElse: () => appPalettes.first);
       lessMotion = r?['less_motion'] == true;
+      final l = (r?['lang'] ?? 'en').toString();
+      lang = const ['en', 'id', 'both'].contains(l) ? l : 'en';
     } catch (_) {}
   }
 
   Future<void> _save() async {
     try {
-      await _store.record('theme').put(LocalDb.db, {'id': palette.id, 'less_motion': lessMotion});
+      await _store.record('theme').put(LocalDb.db, {'id': palette.id, 'less_motion': lessMotion, 'lang': lang});
     } catch (_) {}
+  }
+
+  Future<void> setLang(String v) async {
+    if (v == lang) return;
+    lang = v;
+    generation++; // gambar ulang semua layar dengan label baru
+    notifyListeners();
+    await _save();
   }
 
   Future<void> setLessMotion(bool v) async {
@@ -281,11 +332,29 @@ class YmColors {
   static Color get surfaceAlt => _p.surfaceAlt;
   static Color get surfaceContainer => _p.surfaceContainer;
   static Color get surfaceHigh => _p.surfaceHigh;
+  /// versi web: surface-container-high (#dce9ff) — lintasan batang progres.
+  static Color get surfaceContainerHigh => Color.lerp(_p.surfaceContainer, _p.surfaceHigh, 0.5)!;
   static Color get sidebar => _p.sidebar;
   static Color get outline => _p.outline;
   static Color get successSoft => _p.successSoft;
   static Color get warningSoft => _p.warningSoft;
   static Color get dangerSoft => _p.dangerSoft;
+
+  // ---- token versi web (dengan nilai cadangan untuk tema lain)
+  static Color get primaryContainer => _p.primaryContainer ?? Color.lerp(_p.primary, Colors.white, 0.14)!;
+  static Color get onPrimaryContainer => _p.onPrimaryContainer ?? Colors.white.withOpacity(0.78);
+  static Color get primaryFixed => _p.primaryFixed ?? _p.primarySoft;
+  static Color get onPrimaryFixed => _p.onPrimaryFixed ?? (_p.dark ? Colors.white : Color.lerp(_p.primary, Colors.black, 0.55)!);
+  static Color get onSuccessSoft => _p.onSuccessSoft ?? (_p.dark ? _p.success : Color.lerp(_p.success, Colors.black, 0.25)!);
+  static Color get successContainer => _p.successContainer ?? (_p.dark ? const Color(0xFF14533F) : const Color(0xFF82F5C1));
+  static Color get onSuccessContainer => _p.dark ? _p.success : const Color(0xFF00714E);
+  static Color get onWarningSoft => _p.onWarningSoft ?? (_p.dark ? _p.warning : const Color(0xFF2F1500));
+  static Color get onDangerSoft => _p.onDangerSoft ?? (_p.dark ? _p.danger : const Color(0xFF93000A));
+  static Color get outlineVariant => _p.outlineVariant ?? Color.lerp(_p.line, _p.outline, 0.35)!;
+  static Color get inverseSurface => _p.inverseSurface ?? (_p.dark ? const Color(0xFFE6E9F2) : const Color(0xFF213145));
+  static Color get onInverseSurface => _p.dark ? const Color(0xFF131929) : const Color(0xFFEAF1FF);
+  static Color get inversePrimary => _p.inversePrimary ?? (_p.dark ? _p.primaryDeep : Color.lerp(_p.primary, Colors.white, 0.65)!);
+  static Color get warningDim => _p.warningDim ?? const Color(0xFFFFB77D);
   static Color get line => _p.line;
   static Color get puBlue => _p.primary;
   static Color get link => _p.link;
@@ -352,24 +421,51 @@ class YmTextStyles {
       TextStyle(fontFamily: kFont, fontFamilyFallback: kFontFallback, fontSize: 11.5, color: YmColors.textMuted, height: 1.35);
 
   /// Judul halaman besar.
-  static TextStyle get pageTitle => TextStyle(
-      fontFamily: kFontDisplay, fontFamilyFallback: kFontFallback, fontSize: 30, fontWeight: FontWeight.w700, color: YmColors.textDark, letterSpacing: -0.6, height: 1.2);
+  static TextStyle get pageTitle => display;
 
   /// Judul kartu / dokumen (versi web: headline-sm 16px).
-  static TextStyle get headline => TextStyle(
-      fontFamily: kFontDisplay, fontFamilyFallback: kFontFallback, fontSize: 16, fontWeight: FontWeight.w700, color: YmColors.textDark, letterSpacing: -0.1, height: 1.4);
+  static TextStyle get headline => headlineSm;
 
   /// Angka besar di kartu statistik.
-  static TextStyle get bigNumber => TextStyle(
-      fontFamily: kFontDisplay, fontFamilyFallback: kFontFallback, fontSize: 30, fontWeight: FontWeight.w700, color: YmColors.textDark, letterSpacing: -0.6, height: 1.1);
+  static TextStyle get bigNumber => display;
 
   /// Judul kelompok kecil (versi web: label-sm, huruf kapital, renggang).
   static TextStyle get overline => TextStyle(
       fontFamily: kFont, fontFamilyFallback: kFontFallback, fontSize: 11, fontWeight: FontWeight.w600, color: YmColors.outline, letterSpacing: 0.6);
 
   /// Judul bagian (kartu/panel).
-  static TextStyle get sectionTitle =>
-      TextStyle(fontFamily: kFontDisplay, fontFamilyFallback: kFontFallback, fontSize: 16, fontWeight: FontWeight.w700, color: YmColors.textDark, letterSpacing: -0.2);
+  static TextStyle get sectionTitle => headlineMd;
+
+  // ---- skala huruf versi web (Tailwind config) ----
+  /// display-lg: 36/44, -0.02em, 700 (Plus Jakarta Sans) — judul halaman, angka besar.
+  static TextStyle get display => TextStyle(
+      fontFamily: kFontDisplay, fontFamilyFallback: kFontFallback, fontSize: 36, height: 44 / 36, fontWeight: FontWeight.w700, letterSpacing: -0.72, color: YmColors.textDark);
+
+  /// headline-md: 20/28, -0.01em, 600 — judul kartu besar.
+  static TextStyle get headlineMd => TextStyle(
+      fontFamily: kFontDisplay, fontFamilyFallback: kFontFallback, fontSize: 20, height: 28 / 20, fontWeight: FontWeight.w600, letterSpacing: -0.2, color: YmColors.textDark);
+
+  /// headline-sm: 16/24, 600 — judul dokumen di daftar.
+  static TextStyle get headlineSm => TextStyle(
+      fontFamily: kFontDisplay, fontFamilyFallback: kFontFallback, fontSize: 16, height: 24 / 16, fontWeight: FontWeight.w600, color: YmColors.textDark);
+
+  /// label-lg: 14/20, 500 (Inter) — menu, tombol.
+  static TextStyle get labelLg =>
+      TextStyle(fontFamily: kFont, fontFamilyFallback: kFontFallback, fontSize: 14, height: 20 / 14, fontWeight: FontWeight.w500, color: YmColors.textDark);
+
+  /// label-md: 12/16, 500, +0.01em.
+  static TextStyle get labelMd => TextStyle(
+      fontFamily: kFont, fontFamilyFallback: kFontFallback, fontSize: 12, height: 16 / 12, fontWeight: FontWeight.w500, letterSpacing: 0.12, color: YmColors.textDark);
+
+  /// label-sm: 11/14, 600, +0.02em.
+  static TextStyle get labelSm => TextStyle(
+      fontFamily: kFont, fontFamilyFallback: kFontFallback, fontSize: 11, height: 14 / 11, fontWeight: FontWeight.w600, letterSpacing: 0.22, color: YmColors.textMuted);
+
+  /// body-md: 14/22.
+  static TextStyle get bodyMd => TextStyle(fontFamily: kFont, fontFamilyFallback: kFontFallback, fontSize: 14, height: 22 / 14, color: YmColors.textMuted);
+
+  /// body-sm: 12/18.
+  static TextStyle get bodySm => TextStyle(fontFamily: kFont, fontFamilyFallback: kFontFallback, fontSize: 12, height: 18 / 12, color: YmColors.textMuted);
 
   /// Label kecil di atas nilai (mis. "Nomor dokumen").
   static TextStyle get fieldLabel =>
@@ -392,21 +488,29 @@ Duration motion(BuildContext context, [Duration d = kMotion]) => MediaQuery.mayb
 
 bool reduceMotion(BuildContext context) => MediaQuery.maybeOf(context)?.disableAnimations == true;
 
-/// Bayangan lembut untuk kartu (hampir tak terlihat, hanya memberi kedalaman).
-List<BoxShadow> get softShadow => YmColors.isDark
+/// Bayangan Tailwind persis versi web.
+/// shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05)
+List<BoxShadow> get shadowSm => YmColors.isDark ? const [] : const [BoxShadow(color: Color(0x0D000000), blurRadius: 2, offset: Offset(0, 1))];
+
+/// shadow-md: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1)
+List<BoxShadow> get shadowMd => YmColors.isDark
     ? const []
     : const [
-        BoxShadow(color: Color(0x0F0F172A), blurRadius: 3, offset: Offset(0, 1)),
-        BoxShadow(color: Color(0x080F172A), blurRadius: 2, offset: Offset(0, 1)),
+        BoxShadow(color: Color(0x1A000000), blurRadius: 6, spreadRadius: -1, offset: Offset(0, 4)),
+        BoxShadow(color: Color(0x1A000000), blurRadius: 4, spreadRadius: -2, offset: Offset(0, 2)),
       ];
 
+/// shadow-xl (bar aksi massal).
+List<BoxShadow> get shadowXl => const [
+      BoxShadow(color: Color(0x1A000000), blurRadius: 25, spreadRadius: -5, offset: Offset(0, 20)),
+      BoxShadow(color: Color(0x1A000000), blurRadius: 10, spreadRadius: -6, offset: Offset(0, 8)),
+    ];
+
+/// Bayangan lembut untuk kartu (hampir tak terlihat, hanya memberi kedalaman).
+List<BoxShadow> get softShadow => shadowSm;
+
 /// Bayangan kartu saat disorot mouse (versi web: hover:shadow-md).
-List<BoxShadow> get hoverShadow => YmColors.isDark
-    ? const []
-    : const [
-        BoxShadow(color: Color(0x140F172A), blurRadius: 12, offset: Offset(0, 4)),
-        BoxShadow(color: Color(0x0A0F172A), blurRadius: 4, offset: Offset(0, 2)),
-      ];
+List<BoxShadow> get hoverShadow => shadowMd;
 
 /// Tema Material untuk seluruh aplikasi (mengikuti tema aktif).
 ThemeData buildAppTheme() {

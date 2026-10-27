@@ -19,7 +19,7 @@ Peta semua file server, apa fungsinya, dan **file mana yang diubah kalau mau men
 | Folder penyimpanan file dokumen | `.env` | `STORAGE_DIR` |
 | Batas ukuran upload (MB) | `.env` | `MAX_UPLOAD_MB` (samakan dengan aplikasi `lib/core/format.dart`) |
 | Jenis file yang boleh diunggah | `app/config.py` | `ALLOWED_EXTENSIONS` |
-| Daftar kode kategori dokumen | `app/config.py` | `CATEGORIES` (samakan dengan aplikasi `lib/core/categories.dart`) |
+| Daftar kode kategori dokumen | `app/config.py` | `CATEGORIES`, `CATEGORY_LABELS` (en/id), `LEGACY_CATEGORY_MAP` (samakan dengan aplikasi `lib/core/categories.dart`) |
 | Kekuatan hash password | `app/config.py` | `LOGIN_ITERATIONS`, `OFFLINE_ITERATIONS` |
 | Kamus pencarian awal (mis. pengeluaran = 544) | `app/main.py` | `DEFAULT_TERMS` (hanya dipakai saat tabel kamus kosong; selanjutnya ubah lewat aplikasi) |
 | Tambah kolom di tabel | `app/db.py` | class tabel + `_auto_migrate()` → `wanted` (supaya database lama ikut bertambah kolom) |
@@ -96,7 +96,7 @@ Koneksi database (SQLAlchemy), **instalasi database otomatis**, dan **tabel-tabe
 ## app/demo_data.py
 **Data contoh** untuk testing (dipakai otomatis bila `SEED_DEMO=1` dan tabel dokumen kosong, atau lewat `seed_demo.py`):
 - `PROJECTS`: 9 proyek (2000–2026), `USERS`: staf `budi` & `sari`.
-- `DOCS`: **50 dokumen** dalam bentuk `(judul, nomor, tanggal, kategori, kode proyek, tag, seri, jenis file, isi)`. Kelompoknya: seri Dokumen 1 Formula A/B/C, kontrak 2100, kode rekening 544, seri AHSP, Jembatan Sei Ladi BM-0458, Gedung Kecamatan 3307, Drainase DR-1120, proyek Simpang Kara, dan 10 dokumen tanpa relasi.
+- `DOCS`: **50 dokumen** dalam bentuk `(judul, nomor, tanggal, kategori, kode proyek, tag, seri, jenis file, isi)`. Dua bahasa (Inggris & Indonesia), 10 dokumen per kategori (INVOICE, CONTRACT, TAX, SHIPMENT, MEETING). Relasi: seri Dokumen 1 Formula A/B/C, kontrak 2100, kode rekening 544, seri AHSP, Jembatan Sei Ladi BM-0458, Gedung Kecamatan 3307, Drainase DR-1120, impor bantalan (B/L → PIB), seri Weekly Site Meeting Simpang Kara.
 - `make_pdf()`, `make_docx()`, `make_xlsx()`, `make_png()`: membuat file asli tanpa aplikasi Office.
 - `seed()`: menyimpan file ke `storage/`, mengisi tabel, lalu langsung membaca isi file (supaya pencarian isi jalan). Aman diulang.
 

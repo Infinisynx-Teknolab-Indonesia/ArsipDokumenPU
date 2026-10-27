@@ -8,6 +8,8 @@ import '../services/app_state.dart';
 import '../services/nav.dart';
 import '../widgets/common.dart';
 import '../widgets/ui.dart';
+import '../services/shortcuts.dart';
+import 'package:flutter/services.dart';
 
 /// Pengaturan: tampilan (tema, animasi), penyimpanan lokal, pintasan, tentang.
 class SettingsPage extends StatefulWidget {
@@ -110,6 +112,26 @@ class _SettingsPageState extends State<SettingsPage> {
               Reveal(
                 index: 2,
                 child: Panel(
+                  title: 'Bahasa kategori',
+                  subtitle: 'Nama kategori dokumen tampil dalam bahasa ini di seluruh aplikasi.',
+                  icon: Icons.translate_rounded,
+                  child: Wrap(spacing: 8, runSpacing: 8, children: [
+                    for (final (code, label) in const [('en', 'English'), ('id', 'Bahasa Indonesia'), ('both', 'Dua bahasa (English / Indonesia)')])
+                      QuickChip(
+                        label: label,
+                        selected: ThemeCtl.instance.lang == code,
+                        onTap: () {
+                          Nav.keepPage = 'settings';
+                          ThemeCtl.instance.setLang(code);
+                        },
+                      ),
+                  ]),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Reveal(
+                index: 2,
+                child: Panel(
                   title: 'Penyimpanan lokal (offline)',
                   subtitle: 'Database NoSQL + salinan file di PC ini.',
                   icon: Icons.storage_rounded,
@@ -166,32 +188,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const SizedBox(height: 18),
               Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(
-                  child: Reveal(
-                    index: 3,
-                    child: Panel(
-                      title: 'Pintasan keyboard',
-                      icon: Icons.keyboard_outlined,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: 8),
-                          for (final (k, v) in const [
-                            ('Ctrl K', 'Cari di seluruh arsip (kolom cari atas)'),
-                            ('Ctrl F', 'Cari di halaman ini / di dalam dokumen yang dibuka'),
-                            ('Ctrl P', 'Cetak dokumen yang dibuka'),
-                            ('F11', 'Masuk / keluar layar penuh'),
-                            ('Esc', 'Tutup detail dokumen'),
-                          ])
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: Row(children: [SizedBox(width: 90, child: Align(alignment: Alignment.centerLeft, child: KbdHint(k))), Expanded(child: Text(v, style: YmTextStyles.chatText))]),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                const Expanded(child: Reveal(index: 3, child: _ShortcutsPanel())),
                 const SizedBox(width: 18),
                 Expanded(
                   child: Reveal(
@@ -386,6 +383,136 @@ class _ThemeCardState extends State<_ThemeCard> {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+/// Pintasan keyboard yang bisa diatur: klik "Ubah", tekan kombinasi baru.
+class _ShortcutsPanel extends StatelessWidget {
+  const _ShortcutsPanel();
+
+  Future<void> _record(BuildContext context, AppAction a) async {
+    final ctl = ShortcutCtl.instance;
+    final combo = await showDialog<KeyCombo>(context: context, builder: (_) => _RecordDialog(action: a));
+    if (combo == null || !context.mounted) return;
+    final clash = ctl.conflictOf(a, combo);
+    if (clash != null) {
+      final ok = await confirmDialog(context,
+          title: 'Pintasan sudah dipakai',
+          message: '${combo.label} sudah dipakai untuk "${clash.title}". Pindahkan ke "${a.title}"? '
+              '"${clash.title}" akan kembali ke pintasan bawaannya.',
+          ok: 'Pindahkan');
+      if (!ok) return;
+      await ctl.set(clash, ShortcutCtl.defaults[clash]!);
+    }
+    await ctl.set(a, combo);
+    if (context.mounted) showSnack(context, '"${a.title}" sekarang: ${combo.label}');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ctl = ShortcutCtl.instance;
+    return ListenableBuilder(
+      listenable: ctl,
+      builder: (context, _) => Panel(
+        title: 'Pintasan keyboard',
+        subtitle: 'Klik "Ubah" lalu tekan kombinasi tombol baru.',
+        icon: Icons.keyboard_outlined,
+        trailing: TextButton(onPressed: ctl.resetAll, child: const Text('Kembalikan bawaan')),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final a in AppAction.values)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(children: [
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(a.title, style: YmTextStyles.labelLg.copyWith(fontWeight: FontWeight.w600)),
+                      Text(a.note, style: YmTextStyles.bodySm),
+                    ]),
+                  ),
+                  const SizedBox(width: 12),
+                  KbdHint(ctl.label(a)),
+                  const SizedBox(width: 8),
+                  TextButton(style: softButtonStyle(), onPressed: () => _record(context, a), child: const Text('Ubah')),
+                ]),
+              ),
+            Text('Tetap (tidak bisa diubah): Ctrl P = cetak dokumen yang dibuka • Esc = tutup detail dokumen • Ctrl +/− = zoom dokumen.',
+                style: YmTextStyles.bodySm),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecordDialog extends StatefulWidget {
+  final AppAction action;
+  const _RecordDialog({required this.action});
+
+  @override
+  State<_RecordDialog> createState() => _RecordDialogState();
+}
+
+class _RecordDialogState extends State<_RecordDialog> {
+  KeyCombo? _combo;
+
+  @override
+  void initState() {
+    super.initState();
+    ShortcutCtl.instance.recording = true;
+    HardwareKeyboard.instance.addHandler(_onKey);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_onKey);
+    ShortcutCtl.instance.recording = false;
+    super.dispose();
+  }
+
+  bool _onKey(KeyEvent e) {
+    if (e is! KeyDownEvent) return false;
+    if (e.logicalKey == LogicalKeyboardKey.escape) return false; // biar dialog menutup sendiri
+    final c = KeyCombo.fromEvent(e);
+    if (c == null) return true; // baru tombol Ctrl/Shift/Alt — tunggu tombol utamanya
+    // huruf/angka tanpa Ctrl/Alt akan mengganggu saat mengetik -> wajib pakai Ctrl/Alt, kecuali F1–F12
+    final isFn = e.logicalKey.keyLabel.startsWith('F') && e.logicalKey.keyLabel.length > 1;
+    if (!c.ctrl && !c.alt && !isFn) {
+      setState(() => _combo = null);
+      return true;
+    }
+    setState(() => _combo = c);
+    return true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Pintasan: ${widget.action.title}'),
+      content: SizedBox(
+        width: 420,
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('Tekan kombinasi tombol baru (pakai Ctrl atau Alt, atau tombol F1–F12). Esc = batal.', textAlign: TextAlign.center, style: YmTextStyles.bodyMd),
+          const SizedBox(height: 20),
+          AnimatedSwitcher(
+            duration: motion(context, kMotionFast),
+            transitionBuilder: (c, a) => ScaleTransition(scale: Tween(begin: 0.9, end: 1.0).animate(a), child: FadeTransition(opacity: a, child: c)),
+            child: Container(
+              key: ValueKey(_combo?.label ?? '-'),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              decoration: BoxDecoration(color: YmColors.surfaceAlt, borderRadius: BorderRadius.circular(12), border: Border.all(color: YmColors.primary.withOpacity(0.3))),
+              child: Text(_combo?.label ?? 'Menunggu tombol…', style: YmTextStyles.headlineMd.copyWith(color: _combo == null ? YmColors.outline : YmColors.primary)),
+            ),
+          ),
+        ]),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+        ElevatedButton(style: primaryButtonStyle(), onPressed: _combo == null ? null : () => Navigator.pop(context, _combo), child: const Text('Simpan')),
+      ],
     );
   }
 }

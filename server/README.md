@@ -97,19 +97,27 @@ D:\python3.12\python.exe reset_admin.py administrator administrator
 Akun: **admin / Admin@12345** (admin), **budi / budi12345** dan **sari / sari12345** (staf).
 Semua file asli bisa dibuka: **PDF, Word (.docx), Excel (.xlsx), TXT, dan foto (PNG)**. Isi PDF/Word/Excel/TXT sudah terbaca untuk pencarian.
 
-| Kelompok | Dokumen | Coba di aplikasi |
-|---|---|---|
-| **Seri "Dokumen 1"** | Formula A (2000) → Formula B (2002) → Formula C (2026) | Cari `formula c`: A dan B muncul sebagai **Seri** di bawah hasil |
-| **Kontrak 2100** Jalan Lingkar Sekupang | Kontrak, SPMK, Addendum I (2000), BA PHO (2000), BA FHO (2001), Kontrak Tahap II (2002) | Cari `2100`, atau buka Kontrak Tahap II lalu tab **Terkait** |
-| **Kode rekening 544** (pengeluaran) | SPJ 2010, Rekap 2015, LRA 2019 (ditulis `5.4.4`), Nota Dinas 2025, SP2D 2026 | Cari `pengeluaran`: ikut menemukan isi file berkode 544 (lewat Kamus) |
-| **Seri "AHSP Bidang Jalan"** | 2015 → Revisi 1 2019 → 2025 (Excel) | Buka salah satunya, lalu lihat linimasa seri |
-| **Jembatan Sei Ladi** BM-0458 | Uji beton, BA PHO (2010), As-Built (2011) → Kontrak, Shop Drawing, PDA test, SP2D (2026) | Cari `0458`, atau buka Kontrak Jembatan 2026 lalu tab **Terkait** |
-| **Gedung Kecamatan Sekupang** kontrak 3307 | Kontrak (2015), As-Built (2016) → Kontrak Rehabilitasi, Foto 100% (2025) | Cari `3307` |
-| **Drainase Ahmad Yani** DR-1120 | Gambar Rencana, Laporan Akhir (2019) → HPS, Izin Lingkungan (2026) | Cari `dr-1120` |
-| **Proyek berjalan Simpang Kara** 2026 | Kontrak, MC-0, MC-50, Laporan Mingguan ke-1..4, Foto 0% & 50% | Menu Proyek → **Lihat dokumen** |
-| **Tanpa relasi** (10) | Undangan rapat 2005, Pedoman arsip 2008, SOP K3 2012, Inventaris alat berat 2017, Kalibrasi theodolit 2018, Peta banjir 2020, Notulen 2021, Laporan tahunan 2022, SE jam kerja 2023, Renstra 2024 | Tab **Terkait** kosong |
+Dokumen **dua bahasa** (judul & isi sebagian bahasa Inggris, sebagian Indonesia), **10 dokumen untuk tiap kategori**:
 
-Ingin mulai dari database kosong? Set `SEED_DEMO=0`, lalu hapus database: `DROP DATABASE arsip_pu;` (folder `storage` juga dikosongkan), kemudian jalankan server lagi.
+| Kategori (kode) | Contoh dokumen |
+|---|---|
+| **Invoices & Receipts** / Faktur & Kuitansi (`INVOICE`) | Invoice aspal AC-WC, Kuitansi termin 2 Jembatan Sei Ladi, Invoice girder PCI, Kuitansi uang muka, Equipment rental invoice, Faktur besi beton, Readymix delivery receipts, Nota ATK |
+| **Contracts & Agreements** / Kontrak & Perjanjian (`CONTRACT`) | Kontrak 2100 Jalan Lingkar Sekupang + SPMK + Addendum, Contract Phase II, Contract Sei Ladi Bridge, Kontrak Gedung 3307, Contract rehabilitation, Master Supply Agreement, PKS konsultan |
+| **Tax & Financial Reports** / Pajak & Laporan Keuangan (`TAX`) | Seri "Dokumen 1" Formula A → B → C, SPJ & rekap berkode 544, LRA 2019, VAT & income tax report, seri AHSP 2015 → 2019 → 2025 |
+| **Shipments & Trade Dossiers** / Pengiriman & Dokumen Dagang (`SHIPMENT`) | Bill of Lading → Packing List → Certificate of Origin Form E → PIB (impor bantalan jembatan), Surat jalan aspal, Mill test certificate, Shipment tracking box culvert, Uji beton K-300 |
+| **Meeting Minutes** / Notulen Rapat (`MEETING`) | Pre-construction meeting, seri Weekly Site Meeting Simpang Kara (EN & ID), Design review Sei Ladi, Notulen PHO, Notulen evaluasi drainase, Handover meeting, Annual planning |
+
+Coba di aplikasi: cari `2100`, `0458`, `3307`, `dr-1120`, `formula c`, atau `pengeluaran` (ikut menemukan kode 544 lewat Kamus). Kamus juga berisi padanan dua bahasa: `invoice ↔ faktur/kuitansi`, `contract ↔ kontrak`, `tax ↔ pajak`, `shipment ↔ pengiriman`, `minutes ↔ notulen`.
+
+### Membuat database baru (hapus database lama)
+1. Matikan server.
+2. Di MySQL: `DROP DATABASE arsip_pu;`
+3. Kosongkan folder `storage` (file dokumen lama).
+4. Pastikan `SEED_DEMO=1` di `.env`, lalu jalankan server lagi: database, tabel, admin, kamus, dan **50 dokumen contoh** dibuat ulang otomatis.
+
+Database lama yang **tidak** dihapus tetap aman: kode kategori lama (KONTRAK, RAB, LAINNYA, …) otomatis dipindahkan ke 5 kategori baru saat server start.
+
+Ingin database kosong tanpa contoh? Set `SEED_DEMO=0`, lalu hapus database: `DROP DATABASE arsip_pu;` (folder `storage` juga dikosongkan), kemudian jalankan server lagi.
 
 ## Upgrade dari versi sebelumnya
 Ganti folder `app` dengan yang baru, ulangi langkah 2 untuk library baru, lalu jalankan server.

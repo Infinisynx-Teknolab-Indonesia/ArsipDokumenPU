@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/ym_theme.dart';
+import '../services/shortcuts.dart';
 
 /// Bagian bersama untuk semua penampil dokumen di dalam aplikasi
 /// (PDF, Word, Excel, teks, foto): toolbar, kotak cari, pola sorotan.
@@ -304,11 +305,31 @@ class _DocSearchBoxState extends State<DocSearchBox> {
   }
 }
 
-/// Pintasan keyboard penampil: Ctrl+F, Ctrl+plus, Ctrl+minus, Ctrl+0.
-class ViewerShortcuts extends StatelessWidget {
+/// Pintasan keyboard penampil: cari (pintasan "Cari di halaman", bawaan Ctrl+F —
+/// lewat ShortcutCtl supaya selalu bekerja & bisa diatur), Ctrl+plus, Ctrl+minus, Ctrl+0.
+class ViewerShortcuts extends StatefulWidget {
   final Widget child;
   final VoidCallback? onFind, onZoomIn, onZoomOut, onZoomReset;
   const ViewerShortcuts({super.key, required this.child, this.onFind, this.onZoomIn, this.onZoomOut, this.onZoomReset});
+
+  @override
+  State<ViewerShortcuts> createState() => _ViewerShortcutsState();
+}
+
+class _ViewerShortcutsState extends State<ViewerShortcuts> {
+  void _find() => widget.onFind?.call();
+
+  @override
+  void initState() {
+    super.initState();
+    ShortcutCtl.instance.registerViewerFind(_find);
+  }
+
+  @override
+  void dispose() {
+    ShortcutCtl.instance.unregisterViewerFind(_find);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -320,13 +341,12 @@ class ViewerShortcuts extends StatelessWidget {
       b[SingleActivator(k, meta: true)] = f;
     }
 
-    add(LogicalKeyboardKey.keyF, onFind);
-    add(LogicalKeyboardKey.equal, onZoomIn);
-    add(LogicalKeyboardKey.numpadAdd, onZoomIn);
-    add(LogicalKeyboardKey.minus, onZoomOut);
-    add(LogicalKeyboardKey.numpadSubtract, onZoomOut);
-    add(LogicalKeyboardKey.digit0, onZoomReset);
-    return CallbackShortcuts(bindings: b, child: Focus(autofocus: true, child: child));
+    add(LogicalKeyboardKey.equal, widget.onZoomIn);
+    add(LogicalKeyboardKey.numpadAdd, widget.onZoomIn);
+    add(LogicalKeyboardKey.minus, widget.onZoomOut);
+    add(LogicalKeyboardKey.numpadSubtract, widget.onZoomOut);
+    add(LogicalKeyboardKey.digit0, widget.onZoomReset);
+    return CallbackShortcuts(bindings: b, child: Focus(autofocus: true, child: widget.child));
   }
 }
 

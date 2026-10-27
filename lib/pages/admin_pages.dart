@@ -204,7 +204,7 @@ class _AdminOverviewPageState extends State<AdminOverviewPage> {
           index: 4,
           child: Panel(
             title: 'Status server',
-            subtitle: AppState.instance.settings.apiUrl,
+            subtitle: AppState.instance.settings.activeUrl,
             icon: Icons.dns_outlined,
             child: Column(children: [
               const SizedBox(height: 6),
@@ -365,7 +365,7 @@ class _DevicesPageState extends State<DevicesPage> {
               QuickChip(
                 label: code == 'all' ? '$label (${all.length})' : '$label (${counts[code] ?? 0})',
                 selected: _filter == code,
-                tone: code == 'pending' && (counts['pending'] ?? 0) > 0 ? YmColors.warning : null,
+                tone: code == 'pending' && (counts['pending'] ?? 0) > 0 ? ChipTone.warning : ChipTone.normal,
                 onTap: () => setState(() => _filter = code),
               ),
           ]),

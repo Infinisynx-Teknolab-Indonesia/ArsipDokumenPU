@@ -150,7 +150,7 @@ class Document(Base):
     title: Mapped[str] = mapped_column(String(255))
     doc_number: Mapped[str] = mapped_column(String(128), default="")
     doc_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
-    category: Mapped[str] = mapped_column(String(32), default="LAINNYA", index=True)
+    category: Mapped[str] = mapped_column(String(32), default="CONTRACT", index=True)
     project_id: Mapped[int | None] = mapped_column(ForeignKey("projects.id"), nullable=True, index=True)
     description: Mapped[str] = mapped_column(Text, default="")
     tags: Mapped[str] = mapped_column(String(512), default="")
@@ -273,6 +273,15 @@ def init_db() -> None:
     ensure_database()
     Base.metadata.create_all(engine)
     _auto_migrate()
+    _migrate_categories()
+
+
+def _migrate_categories() -> None:
+    """Pindahkan kode kategori lama (KONTRAK, RAB, ...) ke 5 kategori baru."""
+    from . import config
+    with engine.begin() as conn:
+        for old, new in config.LEGACY_CATEGORY_MAP.items():
+            conn.execute(text("UPDATE documents SET category = :new WHERE category = :old"), {"new": new, "old": old})
 
 
 def _auto_migrate() -> None:

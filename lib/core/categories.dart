@@ -1,37 +1,54 @@
 import 'package:flutter/material.dart';
+import '../theme/ym_theme.dart';
 
-/// Kategori dokumen proyek konstruksi PU. Kode disimpan di database
-/// (aplikasi + server), label boleh diubah kapan saja.
+/// Kategori dokumen — persis versi web: hanya 5 kategori, dua bahasa
+/// (English / Bahasa Indonesia). Kode disimpan di database (aplikasi + server);
+/// label tampil sesuai pilihan bahasa di Pengaturan → Bahasa kategori.
 class DocCategory {
   final String code;
-  final String label;
+  final String labelEn;
+  final String labelId;
   final IconData icon;
   final Color color;
-  const DocCategory(this.code, this.label, this.icon, this.color);
+  const DocCategory(this.code, this.labelEn, this.labelId, this.icon, this.color);
+
+  /// Label sesuai bahasa yang dipilih ('en' | 'id' | 'both').
+  String get label => switch (ThemeCtl.instance.lang) {
+        'id' => labelId,
+        'both' => '$labelEn / $labelId',
+        _ => labelEn,
+      };
+
+  /// Label pendek (untuk chip / grafik).
+  String get shortLabel => ThemeCtl.instance.lang == 'id' ? labelId : labelEn;
 }
 
 const docCategories = <DocCategory>[
-  DocCategory('KONTRAK', 'Kontrak & Addendum', Icons.handshake_rounded, Color(0xFF5B4FE0)),
-  DocCategory('SPMK', 'SPMK / Surat Perintah', Icons.assignment_turned_in_rounded, Color(0xFF2F3E9E)),
-  DocCategory('RAB', 'RAB / BoQ / HPS', Icons.calculate_rounded, Color(0xFF0E8F7E)),
-  DocCategory('GAMBAR', 'Gambar Rencana / Shop Drawing', Icons.architecture_rounded, Color(0xFF1F7AE0)),
-  DocCategory('ASBUILT', 'Gambar As-Built', Icons.design_services_rounded, Color(0xFF3D9BE9)),
-  DocCategory('LAP_HARIAN', 'Laporan Harian', Icons.today_rounded, Color(0xFFE08A1E)),
-  DocCategory('LAP_MINGGUAN', 'Laporan Mingguan', Icons.date_range_rounded, Color(0xFFD9701A)),
-  DocCategory('LAP_BULANAN', 'Laporan Bulanan', Icons.calendar_month_rounded, Color(0xFFC25A12)),
-  DocCategory('MC', 'MC / Opname / Back-up Data', Icons.straighten_rounded, Color(0xFF8E44AD)),
-  DocCategory('FOTO', 'Foto Dokumentasi Progres', Icons.photo_camera_rounded, Color(0xFF16A085)),
-  DocCategory('BA', 'Berita Acara (PHO / FHO / Serah Terima)', Icons.gavel_rounded, Color(0xFFB03A2E)),
-  DocCategory('UJI_MUTU', 'Uji Mutu / Hasil Laboratorium', Icons.science_rounded, Color(0xFF27AE60)),
-  DocCategory('SURAT', 'Surat Menyurat', Icons.mail_rounded, Color(0xFF7F8C8D)),
-  DocCategory('IZIN', 'Perizinan / AMDAL / Lingkungan', Icons.verified_rounded, Color(0xFF2E86C1)),
-  DocCategory('KEUANGAN', 'Keuangan / Termin Pembayaran', Icons.payments_rounded, Color(0xFFD4AC0D)),
-  DocCategory('K3', 'K3 / Keselamatan Konstruksi', Icons.health_and_safety_rounded, Color(0xFFE74C3C)),
-  DocCategory('LAINNYA', 'Lainnya', Icons.folder_rounded, Color(0xFF8A8DAE)),
+  DocCategory('INVOICE', 'Invoices & Receipts', 'Faktur & Kuitansi', Icons.receipt_long_outlined, Color(0xFF293CA0)),
+  DocCategory('CONTRACT', 'Contracts & Agreements', 'Kontrak & Perjanjian', Icons.description_outlined, Color(0xFF4355B9)),
+  DocCategory('TAX', 'Tax & Financial Reports', 'Pajak & Laporan Keuangan', Icons.query_stats_rounded, Color(0xFF904D00)),
+  DocCategory('SHIPMENT', 'Shipments & Trade Dossiers', 'Pengiriman & Dokumen Dagang', Icons.local_shipping_outlined, Color(0xFF006C4A)),
+  DocCategory('MEETING', 'Meeting Minutes', 'Notulen Rapat', Icons.groups_outlined, Color(0xFF757684)),
 ];
 
-DocCategory categoryOf(String code) =>
-    docCategories.firstWhere((c) => c.code == code, orElse: () => docCategories.last);
+/// Kategori bawaan untuk dokumen baru / kode yang tidak dikenal.
+const defaultCategory = 'CONTRACT';
+
+/// Kode kategori lama (versi sebelumnya) -> kategori baru, supaya cache lama tetap tampil benar.
+const legacyCategoryMap = {
+  'KONTRAK': 'CONTRACT', 'SPMK': 'CONTRACT', 'BA': 'CONTRACT', 'IZIN': 'CONTRACT', 'GAMBAR': 'CONTRACT', 'ASBUILT': 'CONTRACT',
+  'RAB': 'TAX', 'MC': 'TAX', 'KEUANGAN': 'TAX',
+  'UJI_MUTU': 'SHIPMENT', 'FOTO': 'SHIPMENT',
+  'LAP_HARIAN': 'MEETING', 'LAP_MINGGUAN': 'MEETING', 'LAP_BULANAN': 'MEETING', 'SURAT': 'MEETING', 'K3': 'MEETING', 'LAINNYA': 'MEETING',
+};
+
+DocCategory categoryOf(String code) {
+  final c = legacyCategoryMap[code] ?? code;
+  return docCategories.firstWhere((e) => e.code == c, orElse: () => docCategories.firstWhere((e) => e.code == defaultCategory));
+}
+
+/// Kode kategori yang valid (kode lama diterjemahkan).
+String normalizeCategory(String code) => categoryOf(code).code;
 
 /// Jenis pekerjaan proyek.
 const projectTypes = ['Jalan', 'Jembatan', 'Gedung / Bangunan', 'Irigasi', 'Drainase', 'Air Minum / Sanitasi', 'Lainnya'];

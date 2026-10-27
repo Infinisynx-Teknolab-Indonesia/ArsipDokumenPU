@@ -33,7 +33,9 @@ Peta semua file di aplikasi desktop, apa fungsinya, dan **file mana yang diubah 
 | Pengaturan email SMTP & tes email (admin) | `lib/pages/admin_pages.dart` | `EmailSettingsPage` |
 | Ringkasan server & aturan keamanan (admin) | `lib/pages/admin_pages.dart` | `AdminOverviewPage`, `SecurityPage` |
 | Seberapa sering cek server (10 detik), tarik data (2 menit), sinkron akun (5 menit) | `lib/services/app_state.dart` | `Timer.periodic(Duration(seconds: 10))`, `pullFromServer`, `_syncUsers` |
-| Kategori dokumen PU (Kontrak, RAB, Laporan, Foto, BA, dst.) | `lib/core/categories.dart` | `docCategories` |
+| 5 kategori dokumen dua bahasa (Invoices, Contracts, Tax, Shipments, Meeting Minutes) | `lib/core/categories.dart` | `docCategories`, `legacyCategoryMap` |
+| Alamat server bawaan (hardcode) | `lib/core/server_config.dart` | `kDefaultServerUrl` (atau `--dart-define=ARSIP_SERVER=...`) |
+| Pintasan keyboard bawaan | `lib/services/shortcuts.dart` | `ShortcutCtl.defaults` |
 | Jenis proyek, status proyek, sumber dana | `lib/core/categories.dart` | `projectTypes`, `projectStatuses`, `fundingSources` |
 | Jenis file yang boleh diunggah, batas ukuran file (100 MB) | `lib/core/format.dart` | `allowedExtensions`, `maxUploadBytes` (samakan dengan server `.env` `MAX_UPLOAD_MB`) |
 | Format tanggal, Rupiah, ukuran file | `lib/core/format.dart` | `formatDateTime`, `formatRupiah`, `formatBytes` |
@@ -120,7 +122,8 @@ ArsipDokumenPU_Desktop/
 |---|---|
 | `models.dart` | **Bentuk data**: `AppSettings` (alamat API), `CachedUser` (akun untuk login offline), `ServerUser`, `Project` (proyek/paket), `DocRecord` (dokumen + status: **draf** / menunggu upload / sedang diunggah / tersimpan / gagal + seri), `SearchTerm` (kamus), `EditRequest` (permintaan edit), `DocVersion`, `AuditEntry`, `Session` (sesi login). Ubah di sini kalau menambah kolom data baru. |
 | `local_db.dart` | **Database NoSQL offline (Sembast)** di `%APPDATA%\ArsipDokumenPU\arsip.db`. Koleksi: settings, users, projects, documents, search_tokens, search_terms. Juga folder salinan file (`files\`) dan folder sementara (`temp\`). |
-| `categories.dart` | Daftar **kategori dokumen PU** (kode, nama, ikon, warna), **jenis proyek**, **status proyek**, **sumber dana**. |
+| `categories.dart` | **5 kategori dokumen** (kode, label English & Indonesia, ikon, warna) + peta kode lama, **jenis proyek**, **status proyek**, **sumber dana**. |
+| `server_config.dart` | Alamat **server bawaan (hardcode)** `kDefaultServerUrl`. |
 | `format.dart` | Fungsi format: tanggal Indonesia, Rupiah, ukuran file, nama file, jenis file. Juga **daftar ekstensi yang boleh diunggah** dan **batas ukuran file**. |
 | `file_tools.dart` | Alat file Windows: buka file dengan aplikasi bawaan, tampilkan di Explorer, simpan salinan, **export CSV** (dokumen & proyek), label status upload. |
 | `pbkdf2.dart` | Hash password **PBKDF2-SHA256** untuk login offline (rumusnya sama dengan server). |

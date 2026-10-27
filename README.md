@@ -3,12 +3,7 @@
 Aplikasi arsip dokumen proyek Pekerjaan Umum (jalan, jembatan, gedung, irigasi, drainase).
 Berjalan layar penuh dengan tampilan sama seperti versi web (DocArchive): top bar + sidebar terang, kartu bersih, animasi halus, dan 6 pilihan tema. Bisa dipakai offline dan mengunggah otomatis saat internet kembali.
 
-Repo ini berisi tiga bagian:
-- **Aplikasi Arsip Dokumen** (folder utama), untuk staf & admin, beserta pembuat installer Windows/macOS.
-- **Server API** FastAPI + MySQL, di folder [`server/`](server/README.md).
-- Fitur **Admin Server** (persetujuan PC, member, email SMTP, keamanan, log) sudah **menyatu di aplikasi desktop** — login sebagai admin, menu ada di bagian *Admin Server* di sidebar. Tidak ada aplikasi admin terpisah lagi.
-
-**Unduh installer jadi:** tab **Actions** → run terbaru *Build Installer Windows & macOS* → bagian **Artifacts**, atau halaman **Releases** untuk versi bertag.
+Folder ini berisi **source aplikasi + pembuat installer**. Server API ada di paket terpisah: **ArsipDokumenPU_Server**.
 
 > 📁 Daftar lengkap semua file, fungsinya, dan file mana yang diubah untuk mengganti sesuatu ada di **[STRUKTUR_FILE.md](STRUKTUR_FILE.md)**.
 
@@ -125,6 +120,9 @@ PC tujuan **tidak perlu** Flutter, Python, ataupun MySQL. Cukup bisa menjangkau 
 | Layar penuh | **F11** | **F11** atau **⌃⌘F** |
 | Cari di dokumen / zoom | Ctrl+F, Ctrl +/− | ⌘F, ⌘ +/− |
 
+### Pintasan keyboard (bisa diubah)
+Bawaan: **Ctrl K** cari di seluruh arsip, **Ctrl F** cari di halaman (saat dokumen terbuka: cari teks di dalam dokumen), **Ctrl U** tambah dokumen, **F5** sinkronkan, **F11** layar penuh. Pintasan bekerja di mana pun kursor berada. Ubah di **Pengaturan → Pintasan keyboard** (klik **Ubah**, tekan kombinasi baru; bentrok diberi peringatan; **Kembalikan bawaan**).
+
 ## Ikon & system tray (sama seperti Batam ChitChat)
 - Ikon aplikasi tampil di taskbar dan di **system tray** (pojok kanan bawah).
 - **Klik kiri** ikon tray: buka aplikasi.
@@ -137,10 +135,15 @@ PC tujuan **tidak perlu** Flutter, Python, ataupun MySQL. Cukup bisa menjangkau 
 > **Penting soal login:** `administrator / administrator` hanya berlaku **sebelum** aplikasi terhubung ke server. Setelah terhubung (di layar login tertulis *Terhubung ke http://...*), masuk dengan akun server. Admin bawaan server adalah **admin / Admin@12345**. Lupa password admin? Di folder server jalankan `D:\python3.12\python.exe reset_admin.py`.
 
 1. Aplikasi terbuka layar penuh. **F11** untuk keluar/masuk layar penuh. **Keluar aplikasi**, Logout, dan kecilkan ke tray ada di menu foto profil (pojok kanan atas).
-2. Login `administrator / administrator`, lalu buka menu **Admin Server → Koneksi Server**.
-3. Isi alamat server, misalnya `http://192.168.1.10:8000/api`, klik **Tes Koneksi**, lalu login dengan akun **admin server**, kemudian **Simpan & Hubungkan**.
+2. Aplikasi otomatis memakai **server bawaan (hardcode)** — alamatnya tertanam di aplikasi (lihat *Server bawaan* di bawah). Kalau server bawaan hidup, langsung login dengan akun server.
+3. Mau pakai server lain? Login `administrator / administrator` (saat belum terhubung) atau sebagai admin, buka **Admin Server → Koneksi Server**, pilih **Server lain**, isi alamat (mis. `http://192.168.1.10:8000/api`), **Tes Koneksi**, login admin server, lalu **Simpan & Hubungkan**. Tombol **Pakai server bawaan** mengembalikan ke alamat hardcode.
 4. Akun `administrator` bawaan otomatis nonaktif. Tambahkan staf di **Admin Server → Staf & Admin**, lalu setujui PC staf di **Admin Server → Perangkat (PC)**.
-5. Lakukan langkah 2–3 sekali di setiap PC (oleh admin). Setelah itu staf cukup login.
+5. Dengan server bawaan, PC baru tidak perlu diatur apa pun. Dengan server lain, lakukan langkah 3 sekali di setiap PC (oleh admin).
+
+### Server bawaan (hardcode) atau server lain
+- Alamat bawaan ada di `lib/core/server_config.dart` (`http://localhost:8000/api`). Ganti saat build tanpa mengubah kode:
+  `flutter build windows --dart-define=ARSIP_SERVER=http://192.168.1.10:8000/api`
+- Pilihan di **Admin Server → Koneksi Server**: **Server bawaan (hardcode)** — bawaan — atau **Server lain** (alamat diisi sendiri, tersimpan di PC).
 
 ## Tampilan
 
@@ -163,7 +166,7 @@ Mengikuti versi web (DocArchive / ArsipIQ): **top bar** berisi logo, kolom cari 
 | Menu | Isi |
 |---|---|
 | **Login** | Admin & staf. Sebelum terhubung ke server hanya akun `administrator / administrator` yang bisa masuk. Setelah terhubung, login memakai akun server dan **tetap bisa login offline** |
-| **Dashboard** | Ringkasan arsip & operasional: total dokumen (+ grafik mingguan), isi file terbaca, **perlu tindakan**, tersimpan di PC; distribusi kategori & penyimpanan, unggah cepat, daftar tindakan segera (gagal unggah, draf, permintaan edit, PC baru), aktivitas terbaru, proyek berjalan, ekspor CSV |
+| **Dashboard** | Ringkasan arsip & operasional: total dokumen (+ grafik mingguan), isi file terbaca, **perlu tindakan**, tersimpan di PC; distribusi kategori & penyimpanan, unggah cepat, daftar tindakan segera (gagal unggah, draf, permintaan edit, PC baru), aktivitas terbaru, koneksi & layanan (server, database PC, pembaca isi file), ekspor CSV — tata letak persis versi web |
 | **Semua Dokumen** | Kartu dokumen gaya web: kategori, status, nomor, tanggal, proyek, ukuran, status sinkron (*Di PC & server / Di server / Di PC, menunggu server*), tombol **Lihat / Detail / ⋮**. Filter kategori, tahun, proyek, jenis file, urutan; chip cepat *Baru ditambahkan / Perlu ditinjau / Menunggu sinkron / Hari ini*; tampilan kartu atau ringkas; halaman 1-2-3; ekspor CSV |
 | **Dokumen Saya** | Semua dokumen yang diinput user tersebut (draf, menunggu, gagal, tersimpan), kirim semua draf, upload ulang |
 | **Tersimpan di PC Ini** | Dokumen yang belum ada di server (draf, antrian, gagal) — terkirim otomatis saat server online |
@@ -223,6 +226,12 @@ Mengikuti versi web (DocArchive / ArsipIQ): **top bar** berisi logo, kolom cari 
   - **Simpan draf**: disimpan di PC saja dan **tidak dikirim** sampai Anda menekan *Kirim*.
 - Draf tampil di **Dokumen Saya → Draf** dan di pengingat ungu di atas daftar (**Kirim semua**). Buka draf untuk melihat isi file, **Edit info**, **Ganti file**, lalu **Sudah benar → kirim ke server**.
 - Dokumen yang sudah masuk antrian tapi belum terkirim masih bisa **ditahan** kembali menjadi draf.
+
+### Ubah / hapus dokumen yang belum terkirim
+Dokumen yang **tertunda** (internet/server mati), **gagal**, atau masih **draf** bisa diubah sebelum masuk server: menu **⋮** di kartu dokumen atau tombol di detail dokumen → **Edit data**, **Ganti file**, atau **Hapus dari antrian**. Saat terkirim, server menerima data terbaru. Dokumen yang sudah di server diubah lewat permintaan edit seperti biasa.
+
+### Kategori (5, dua bahasa)
+Hanya 5 kategori, sama dengan versi web: **Invoices & Receipts** (Faktur & Kuitansi), **Contracts & Agreements** (Kontrak & Perjanjian), **Tax & Financial Reports** (Pajak & Laporan Keuangan), **Shipments & Trade Dossiers** (Pengiriman & Dokumen Dagang), **Meeting Minutes** (Notulen Rapat). Bahasa label dipilih di **Pengaturan → Bahasa kategori**: English, Indonesia, atau keduanya. Kode kategori lama otomatis dipindahkan ke kategori baru.
 
 ### Cara kerja offline
 

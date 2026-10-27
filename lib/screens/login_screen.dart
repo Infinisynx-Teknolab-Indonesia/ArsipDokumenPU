@@ -253,7 +253,7 @@ class _LoginHint extends StatelessWidget {
     final name = app.settings.serverName.isEmpty ? '' : ' (${app.settings.serverName})';
     return _HintBox(
       icon: Icons.dns_outlined,
-      title: 'Terhubung ke ${app.settings.apiUrl}$name',
+      title: 'Terhubung ke ${app.settings.activeUrl}$name',
       body: 'Admin bawaan server: admin / Admin@12345. $n akun tersimpan di PC ini, tetap bisa masuk walau server mati.',
     );
   }
