@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'dart:isolate';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 import '../theme/ym_theme.dart';
 import 'sheet_parser.dart';
@@ -56,7 +57,8 @@ class _SheetDocViewState extends State<SheetDocView> {
       final bytes = await File(widget.path).readAsBytes();
       final name = widget.path.split(RegExp(r'[\\/]')).last;
       final csv = widget.csv;
-      final wb = await Isolate.run(() => csv ? SheetParser.parseCsv(bytes, name) : SheetParser.parseXlsx(bytes));
+      // Fungsi top-level: tidak membawa halaman (State) ke proses latar.
+      final wb = await compute(_parseSheet, (bytes, name, csv));
       if (!mounted) return;
       setState(() => _wb = wb);
       if (_query.trim().isNotEmpty) _search(_query, jumpSheet: true);
@@ -365,4 +367,11 @@ class _SheetDocViewState extends State<SheetDocView> {
   /// Isi sel yang panjang ditampilkan lengkap saat mouse diarahkan.
   Widget _maybeTip(String text, Widget child) =>
       text.length > 30 ? Tooltip(message: text, waitDuration: const Duration(milliseconds: 600), child: child) : child;
+}
+
+/// Dijalankan di proses latar (isolate). Harus fungsi top-level supaya yang
+/// dikirim hanya isi file, bukan widget/halaman.
+WorkbookData _parseSheet((Uint8List, String, bool) job) {
+  final (bytes, name, csv) = job;
+  return csv ? SheetParser.parseCsv(bytes, name) : SheetParser.parseXlsx(bytes);
 }

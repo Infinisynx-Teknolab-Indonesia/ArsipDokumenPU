@@ -343,7 +343,9 @@ class ViewerMessage extends StatelessWidget {
       color: kViewerBackground,
       alignment: Alignment.center,
       padding: const EdgeInsets.all(24),
-      child: ConstrainedBox(
+      // bisa digulir: pesan panjang tidak lagi "overflowed" (garis kuning-hitam)
+      child: SingleChildScrollView(
+        child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(
@@ -355,14 +357,23 @@ class ViewerMessage extends StatelessWidget {
           const SizedBox(height: 14),
           Text(title, textAlign: TextAlign.center, style: YmTextStyles.username.copyWith(fontSize: 15)),
           const SizedBox(height: 6),
-          Text(message, textAlign: TextAlign.center, style: YmTextStyles.chatText.copyWith(fontSize: 12.5, color: YmColors.textMuted, height: 1.4)),
+          SelectableText(_short(message), textAlign: TextAlign.center, style: YmTextStyles.chatText.copyWith(fontSize: 12.5, color: YmColors.textMuted, height: 1.4)),
           if (actions.isNotEmpty) ...[
             const SizedBox(height: 16),
             Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center, children: actions),
           ],
         ]),
       ),
+      ),
     );
+  }
+
+  /// Detail teknis error bisa sangat panjang -> cukup beberapa baris pertama.
+  static String _short(String m) {
+    final lines = m.split('\n');
+    var out = lines.take(4).join('\n');
+    if (out.length > 400) out = '${out.substring(0, 400)}…';
+    return lines.length > 4 && !out.endsWith('…') ? '$out…' : out;
   }
 }
 

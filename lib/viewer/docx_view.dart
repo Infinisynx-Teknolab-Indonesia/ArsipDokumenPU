@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'dart:isolate';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -52,7 +53,8 @@ class _DocxDocViewState extends State<DocxDocView> {
   Future<void> _load() async {
     try {
       final bytes = await File(widget.path).readAsBytes();
-      final model = await Isolate.run(() => DocxParser.parseBytes(bytes));
+      // Fungsi top-level: tidak membawa halaman (State) ke proses latar.
+      final model = await compute(_parseDocx, bytes);
       if (!mounted) return;
       setState(() => _model = model);
       if (widget.initialQuery.trim().isNotEmpty) _search(widget.initialQuery);
@@ -453,3 +455,7 @@ class _DocxDocViewState extends State<DocxDocView> {
     );
   }
 }
+
+/// Dijalankan di proses latar (isolate). Harus fungsi top-level supaya yang
+/// dikirim hanya isi file, bukan widget/halaman.
+DocxModel _parseDocx(Uint8List bytes) => DocxParser.parseBytes(bytes);
